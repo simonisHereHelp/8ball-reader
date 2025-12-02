@@ -39,11 +39,34 @@ export function ImageCaptureDialogMobile({
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  /**
-   * Handles the save operation. It uploads the latest image to /api/summarize,
-   * then displays the first 800 characters of the summary in an overlay.
-   */
+
   const handleSave = async () => {
+    if (images.length === 0) return;
+    setIsSaving(true);
+    try {
+      const files = images.map((image) => image.file);
+
+      // This Promise simulates a network request, like an API call to upload the files.
+      // Replace this with your actual save logic (e.g., using fetch or axios).
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          console.log("Saved files:", files);
+          resolve();
+        }, 3000);
+      });
+
+      const latestImage = files[files.length - 1];
+      const formData = new FormData();
+      formData.append("image", latestImage);
+    } catch (error) {
+      console.error("Failed to save images:", error);
+      // You could add an error state here to show an alert to the user.
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSummary = async () => {
     if (images.length === 0) return;
     setIsSaving(true);
     setError("");
@@ -253,7 +276,7 @@ export function ImageCaptureDialogMobile({
               </Button>
               <Button
                 variant="default"
-                onClick={handleSave}
+                onClick={handleSummary}
                 disabled={isSaving || images.length === 0}
                 className="flex-1 bg-blue-400 hover:bg-blue-300 text-white cursor-pointer"
               >
