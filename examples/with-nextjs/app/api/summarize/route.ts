@@ -13,13 +13,10 @@ const PROMPTS_URL =
 let cachedPrompts: PromptConfig | null = null;
 
 async function fetchPrompts(): Promise<PromptConfig> {
-  if (cachedPrompts) {
-    return cachedPrompts;
-  }
+  if (cachedPrompts) return cachedPrompts;
 
   try {
     const response = await fetch(PROMPTS_URL);
-
     if (!response.ok) {
       throw new Error(`Failed to fetch prompts: HTTP ${response.status}`);
     }
@@ -33,7 +30,8 @@ async function fetchPrompts(): Promise<PromptConfig> {
     cachedPrompts = {
       system: prompts.system,
       user: prompts.user,
-      wordTarget: typeof prompts.wordTarget === "number" ? prompts.wordTarget : 100,
+      wordTarget:
+        typeof prompts.wordTarget === "number" ? prompts.wordTarget : 100,
     };
   } catch (error) {
     console.error("Using fallback prompts because remote fetch failed:", error);
@@ -53,12 +51,8 @@ function buildUserPrompt(userTemplate: string, wordTarget: number) {
   return userTemplate.replace(/\{\{\s*wordTarget\s*\}\}/gi, String(wordTarget));
 }
 
-
-
-
 export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
-
   if (!apiKey) {
     return NextResponse.json(
       { error: "Missing OPENAI_API_KEY environment variable." },
@@ -67,22 +61,89 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
-  const imageFile = formData.get("image");
 
-  if (!(imageFile instanceof File)) {
+  const imageFiles = formData
+    .getAll("image")
+    .filter((item): item is File => item instanceof File);
+
+  const imageUrlStrings = formData
+    .getAll("imageUrl")
+    .filter(
+      (item): item is string =>
+        typeof item === "string" && item.trim().length > 0,
+    )
+    .map((url) => url.trim());
+
+  if (imageFiles.length === 0 && imageUrlStrings.length === 0) {
     return NextResponse.json(
-      { error: "Image file is required." },
+      { error: "At least one image file or imageUrl is required." },
       { status: 400 },
     );
   }
 
-  const arrayBuffer = await imageFile.arrayBuffer();
-  const base64Image = Buffer.from(arrayBuffer).toString("base64");
-  const imageUrl = `data:${imageFile.type};base64,${base64Image}`;
-  
+  let allImageUrls: string[] = [];
+
+  try {
+    // Files → data URLs
+    const fileImageUrls = await Promise.all(
+      imageFiles.map(async (file) => {
+        const arrayBuffer = await file.arrayBuffer();
+        const base64Image = Buffer.from(arrayBuffer).toString("base64");
+        const mimeType = file.type || "application/octet-stream";
+        return `data:${mimeType};base64,${base64Image}`;
+      }),
+    );
+
+    // Remote URLs → data URLs
+    const remoteImageUrls = await Promise.all(
+      imageUrlStrings.map(async (url) => {
+        // if already data URL, just keep it
+        if (url.startsWith("data:")) return url;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch remote image: ${response.status}`);
+        }
+
+        const contentType =
+          response.headers.get("content-type") ?? "application/octet-stream";
+        const arrayBuffer = await response.arrayBuffer();
+        const base64Image = Buffer.from(arrayBuffer).toString("base64");
+
+        return `data:${contentType};base64,${base64Image}`;
+      }),
+    );
+
+    allImageUrls = [...fileImageUrls, ...remoteImageUrls];
+  } catch (error) {
+    console.error("Failed to process images:", error);
+    return NextResponse.json(
+      { error: "Failed to process image inputs." },
+      { status: 400 },
+    );
+  }
+
+  if (allImageUrls.length === 0) {
+    return NextResponse.json(
+      { error: "At least one valid image input is required." },
+      { status: 400 },
+    );
+  }
+
   const prompts = await fetchPrompts();
   const wordTarget = prompts.wordTarget ?? 100;
   const userPrompt = buildUserPrompt(prompts.user, wordTarget);
+
+  const content: (
+    | { type: "text"; text: string }
+    | { type: "image_url"; image_url: { url: string } }
+  )[] = [
+    { type: "text", text: userPrompt },
+    ...allImageUrls.map((url) => ({
+      type: "image_url",
+      image_url: { url },
+    })),
+  ];
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -95,20 +156,11 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "system",
-          content:prompts.system
+          content: prompts.system,
         },
         {
           role: "user",
-          content: [
-            {
-              type: "text",
-              text: userPrompt
-            },
-            {
-              type: "image_url",
-              image_url: { url: imageUrl },
-            },
-          ],
+          content, // ← use multimodal content (text + many images)
         },
       ],
       max_tokens: 400,
@@ -118,7 +170,7 @@ export async function POST(request: Request) {
   if (!response.ok) {
     const error = await response.text();
     return NextResponse.json(
-      { error: error || "Failed to summarize image." },
+      { error: error || "Failed to summarize image(s)." },
       { status: response.status },
     );
   }

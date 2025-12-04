@@ -29,20 +29,20 @@ export const handleSummary = async ({
   setIsSaving(true);
   setError("");
   try {
-    const files = images.map((image) => image.file);
+    const formData = new FormData();
 
-    // Simulate a save/upload request.
-    await new Promise<void>((resolve) => {
-      setTimeout(() => {
-        console.log("Saved files:", files);
-        resolve();
-      }, 3000);
+    // ✅ append ALL images
+    images.forEach((image) => {
+      formData.append("image", image.file);
     });
 
-    const latestImage = files[files.length - 1];
-    const formData = new FormData();
-    formData.append("image", latestImage);
-
+    // ✅ optionally include URLs if your server supports imageUrl
+    images.forEach((image) => {
+      if (image.url) {
+        formData.append("imageUrl", image.url);
+      }
+    });
+    
     const response = await fetch("/api/summarize", {
       method: "POST",
       body: formData,
