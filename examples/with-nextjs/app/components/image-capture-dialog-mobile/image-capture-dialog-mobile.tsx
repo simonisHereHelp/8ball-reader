@@ -17,9 +17,11 @@ interface Image {
 export function ImageCaptureDialogMobile({
   open,
   onOpenChange,
+  googleAuthenticated = false,
 }: {
   open: boolean;
   onOpenChange?: (open: boolean) => void;
+  googleAuthenticated?: boolean;
 }) {
   const [images, setImages] = useState<Image[]>([]);
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
