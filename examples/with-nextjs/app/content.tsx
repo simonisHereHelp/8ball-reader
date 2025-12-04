@@ -7,7 +7,6 @@ import { useSession, signIn } from "next-auth/react";
 
 import { Button } from "@/ui/components";
 import {
-  ImageCaptureDialogDesktop,
   ImageCaptureDialogMobile,
 } from "@/app/components";
 
@@ -102,7 +101,7 @@ function Content() {
           googleAuthenticated={isAuthenticated}
         />
       ) : (
-        <ImageCaptureDialogDesktop
+        <ImageCaptureDialogMobile
           open={open}
           onOpenChange={handleClose}
           googleAuthenticated={isAuthenticated}
