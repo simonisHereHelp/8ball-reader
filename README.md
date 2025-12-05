@@ -20,6 +20,8 @@ A lightweight and flexible React component for capturing images from the user’
 - [Contact](#contact-)
 
 ---
+## Auth Client setup
+![alt text](image.png)
 ## MileStone （Dec 4, 2025)
 --12/04- multiple images+text for ONE GPT completion
 --12/04- 使用next-auth, 關鍵 auth.js + content.tsx

@@ -23,9 +23,14 @@ export const {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       authorization: {
         params: {
-          scope: SCOPES,
-          access_type: "offline",
-          prompt: "consent",
+            scope: [
+              "openid",
+              "email",
+              "profile",
+              "https://www.googleapis.com/auth/drive.file" // REQUIRED for uploads
+            ].join(" "),
+            access_type: "offline", // REQUIRED to get refresh_token
+            prompt: "consent",      // REQUIRED to force returning refresh_token
         },
       },
     }),
