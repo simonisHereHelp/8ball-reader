@@ -1,5 +1,6 @@
 // app/api/save-set/route.ts
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 const DRIVE_UPLOAD_URL =
   "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink";
@@ -56,7 +57,7 @@ async function uploadToDrive({
   const res = await fetch(DRIVE_UPLOAD_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${accessToken}`, // <-- real OAuth access token
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": `multipart/related; boundary=${boundary}`,
     },
     body,
@@ -73,10 +74,7 @@ async function uploadToDrive({
 
 function deriveSetName(summary: string) {
   const trimmed = summary.trim();
-  const datePart = new Date()
-    .toISOString()
-    .slice(0, 10)
-    .replace(/-/g, "");
+  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
 
   const titlePart = trimmed
     .replace(/\s+/g, " ")
@@ -101,18 +99,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const formData = await request.formData();
+  // 🔐 Get session from NextAuth instead of trusting client
+  const session = await auth();
 
-  // 🔑 accessToken is sent from the client (taken from NextAuth session.accessToken)
-  const accessToken =
-    (formData.get("accessToken") as string | null)?.trim() ?? "";
-
-  if (!accessToken) {
+  if (!session) {
     return NextResponse.json(
-      { error: "Missing Google Drive access token." },
+      { error: "Not authenticated." },
       { status: 401 },
     );
   }
+
+  // accessToken was attached in your NextAuth `session` callback
+  const accessToken = (session as typeof session & { accessToken?: string })
+    .accessToken;
+
+  if (!accessToken) {
+    return NextResponse.json(
+      { error: "Missing Google Drive access token on session." },
+      { status: 401 },
+    );
+  }
+
+  const formData = await request.formData();
 
   const summary = (formData.get("summary") as string | null)?.trim() ?? "";
   const setNameFromClient =
