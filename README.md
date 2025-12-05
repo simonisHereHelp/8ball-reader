@@ -5,7 +5,9 @@ A lightweight and flexible React component for capturing images from the user’
 # NextAuth + Google
 https://refine.dev/blog/nextauth-google-github-authentication-nextjs/#introduction
 Cloud Console Project: 8ball-2
-
+```
+浪費8小時，原來是ID信息錯誤。接下來是upload去G Drive
+```
 ---
 ## Auth Client setup
 ![alt text](image.png)
