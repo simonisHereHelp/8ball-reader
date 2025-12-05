@@ -345,6 +345,7 @@ export function ImageCaptureDialogMobile({
                       handleSave({
                       images,
                       summary,
+                      accessToken: (session as any)?.accessToken,
                       setIsSaving,
                       onError: setError,
                     });

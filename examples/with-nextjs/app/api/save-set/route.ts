@@ -1,6 +1,4 @@
-// app/api/save-set/route.ts
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 
 const DRIVE_UPLOAD_URL =
   "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink";
@@ -47,11 +45,7 @@ async function uploadToDrive({
   mimeType: string;
 }) {
   const boundary = "drive-boundary-" + Date.now() + Math.random().toString(16);
-  const metadata = {
-    name,
-    parents: [folderId],
-  };
-
+  const metadata = { name, parents: [folderId] };
   const body = buildMultipartBody(boundary, metadata, buffer, mimeType);
 
   const res = await fetch(DRIVE_UPLOAD_URL, {
@@ -99,28 +93,17 @@ export async function POST(request: Request) {
     );
   }
 
-  // 🔐 Get session from NextAuth instead of trusting client
-  const session = await auth();
+  const formData = await request.formData();
 
-  if (!session) {
-    return NextResponse.json(
-      { error: "Not authenticated." },
-      { status: 401 },
-    );
-  }
-
-  // accessToken was attached in your NextAuth `session` callback
-  const accessToken = (session as typeof session & { accessToken?: string })
-    .accessToken;
+  const accessToken =
+    (formData.get("accessToken") as string | null)?.trim() ?? "";
 
   if (!accessToken) {
     return NextResponse.json(
-      { error: "Missing Google Drive access token on session." },
+      { error: "Missing Google Drive access token." },
       { status: 401 },
     );
   }
-
-  const formData = await request.formData();
 
   const summary = (formData.get("summary") as string | null)?.trim() ?? "";
   const setNameFromClient =

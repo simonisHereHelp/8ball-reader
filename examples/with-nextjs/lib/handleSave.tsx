@@ -26,31 +26,42 @@ function deriveSetName(summary: string) {
 }
 
 /**
- * Simulates saving the current images (e.g. uploading to a server).
- * Does NOT call the summarize API – just runs the "save" workflow.
+ * Saves the current images + summary via /api/save-set.
  */
 export const handleSave = async ({
   images,
   summary,
+  accessToken,
   setIsSaving,
   onError,
 }: {
   images: Image[];
-  summary:string;
+  summary: string;
+  accessToken: string | null | undefined;
   setIsSaving: (isSaving: boolean) => void;
   onError?: (message: string) => void;
 }) => {
   if (images.length === 0) return;
+
   const trimmedSummary = summary.trim();
   if (!trimmedSummary) return;
+
+  if (!accessToken) {
+    onError?.("Missing Google Drive access token. Please log in again.");
+    return;
+  }
+
   setIsSaving(true);
+
   try {
     const setName = deriveSetName(trimmedSummary);
     const formData = new FormData();
 
+    formData.append("accessToken", accessToken);
     formData.append("summary", trimmedSummary);
     formData.append("setName", setName);
 
+    // JSON summary file
     const summaryFile = new File(
       [JSON.stringify({ summary: trimmedSummary }, null, 2)],
       `${setName}.json`,
@@ -58,16 +69,21 @@ export const handleSave = async ({
     );
     formData.append("files", summaryFile);
 
+    // All captured images
     images.forEach((image, index) => {
       const extension =
         image.file.name.split(".").pop() ||
         image.file.type.split("/")[1] ||
         "jpg";
 
-      const renamed = new File([image.file], `${setName}-${index + 1}.${extension}`, {
-        type: image.file.type,
-        lastModified: image.file.lastModified,
-      });
+      const renamed = new File(
+        [image.file],
+        `${setName}-${index + 1}.${extension}`,
+        {
+          type: image.file.type,
+          lastModified: image.file.lastModified,
+        },
+      );
 
       formData.append("files", renamed);
     });
@@ -81,8 +97,6 @@ export const handleSave = async ({
       const message = await response.text();
       throw new Error(message || "Failed to save files to Google Drive.");
     }
-
-
   } catch (error) {
     console.error("Failed to save images:", error);
     onError?.("Unable to save captured images. Please try again.");
