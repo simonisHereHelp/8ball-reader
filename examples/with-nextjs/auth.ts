@@ -8,7 +8,7 @@ const SCOPES = [
   "openid",
   "email",
   "profile",
-  "https://www.googleapis.com/auth/drive.file", // <-- Drive upload scope
+  "https://www.googleapis.com/auth/drive.file", // Drive upload scope
 ].join(" ");
 
 export const {
@@ -36,32 +36,32 @@ export const {
   secret: process.env.AUTH_SECRET,
 
   callbacks: {
-    // Only allow this single Gmail
+    // Only allow your own email
     async signIn({ user }) {
       return user?.email === ALLOWED_EMAIL;
     },
 
-    // Store Google's access token (and refresh token if you want later)
+    // Store Google's access token (and refresh token if present) on the JWT
     async jwt({ token, account }) {
       if (account) {
-        // these come from Google on login
-        // @ts-expect-error - provider-specific fields
-        token.accessToken = account.access_token;
-        // @ts-expect-error
-        token.refreshToken = account.refresh_token;
-        // @ts-expect-error
-        token.expiresAt = account.expires_at
-          ? // Google sends seconds; convert to ms
-            (account.expires_at as number) * 1000
+        const anyToken = token as any;
+        const anyAccount = account as any;
+
+        anyToken.accessToken = anyAccount.access_token;
+        anyToken.refreshToken = anyAccount.refresh_token;
+        anyToken.expiresAt = anyAccount.expires_at
+          ? (anyAccount.expires_at as number) * 1000 // seconds -> ms
           : null;
       }
       return token;
     },
 
-    // Expose accessToken on the session so the client can send it to /save-set
+    // Expose accessToken on the session so the client can send it to /api/save-set
     async session({ session, token }) {
-      // @ts-expect-error - custom field
-      session.accessToken = token.accessToken;
+      const anySession = session as any;
+      const anyToken = token as any;
+
+      anySession.accessToken = anyToken.accessToken;
       return session;
     },
   },
