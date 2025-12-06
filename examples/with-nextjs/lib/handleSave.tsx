@@ -31,13 +31,11 @@ function deriveSetName(summary: string) {
 export const handleSave = async ({
   images,
   summary,
-  accessToken,
   setIsSaving,
   onError,
 }: {
   images: Image[];
   summary: string;
-  accessToken: string | null | undefined;
   setIsSaving: (isSaving: boolean) => void;
   onError?: (message: string) => void;
 }) => {
@@ -46,18 +44,12 @@ export const handleSave = async ({
   const trimmedSummary = summary.trim();
   if (!trimmedSummary) return;
 
-  if (!accessToken) {
-    onError?.("Missing Google Drive access token. Please log in again.");
-    return;
-  }
-
   setIsSaving(true);
 
   try {
     const setName = deriveSetName(trimmedSummary);
     const formData = new FormData();
 
-    formData.append("accessToken", accessToken);
     formData.append("summary", trimmedSummary);
     formData.append("setName", setName);
 

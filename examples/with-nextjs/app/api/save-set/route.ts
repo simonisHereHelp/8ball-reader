@@ -1,7 +1,11 @@
+// app/api/save-set/route.ts
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
 const DRIVE_UPLOAD_URL =
   "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink";
+
+export const runtime = "nodejs"; // ensure Node APIs like Buffer are available
 
 function buildMultipartBody(
   boundary: string,
@@ -93,17 +97,26 @@ export async function POST(request: Request) {
     );
   }
 
-  const formData = await request.formData();
+  // 🔐 use NextAuth session (server-side) instead of trusting client
+  const session = await auth();
 
-  const accessToken =
-    (formData.get("accessToken") as string | null)?.trim() ?? "";
-
-  if (!accessToken) {
+  if (!session) {
     return NextResponse.json(
-      { error: "Missing Google Drive access token." },
+      { error: "Not authenticated." },
       { status: 401 },
     );
   }
+
+  const accessToken = (session as any)?.accessToken as string | undefined;
+
+  if (!accessToken) {
+    return NextResponse.json(
+      { error: "Missing Google Drive access token on session." },
+      { status: 401 },
+    );
+  }
+
+  const formData = await request.formData();
 
   const summary = (formData.get("summary") as string | null)?.trim() ?? "";
   const setNameFromClient =
