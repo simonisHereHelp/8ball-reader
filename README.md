@@ -11,7 +11,9 @@ Cloud Console Project: 8ball-2
 浪費8小時，原來是ID信息錯誤。接下來是upload去G Drive
 ```
 ---
-## Auth Client setup
+## Auth Client setup （G Cloud Console）
+- Client ID 與 Secret + Test user
+- 無需SCOPEs
 ![alt text](./examples/with-nextjs/local_stuff/successAuth.png)
 ## MileStone （Dec 4, 2025)
 --12/04- multiple images+text for ONE GPT completion
