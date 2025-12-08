@@ -303,9 +303,7 @@ export function ImageCaptureDialogMobile({
                         setError("Please summarize before saving.");
                         return;
                       }
-                      setShowGallery(false);
                       setSaveMessage("");
-
                       handleSave({
                         images,
                         summary,
