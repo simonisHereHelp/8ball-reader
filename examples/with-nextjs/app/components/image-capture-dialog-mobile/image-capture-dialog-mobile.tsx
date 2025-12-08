@@ -320,7 +320,8 @@ export function ImageCaptureDialogMobile({
                       });
                     }}
                     disabled={images.length === 0 || isSaving}
-                    className="flex-1 bg-primary hover:bg-primary text-white"
+                    className="flex-1 bg-blue-400 hover:bg-blue-300 text-white flex items-center justify-center gap-2"
+
                   >
                   {isSaving ? (
                     <>
