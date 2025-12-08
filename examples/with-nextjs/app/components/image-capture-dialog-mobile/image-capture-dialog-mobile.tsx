@@ -297,14 +297,6 @@ export function ImageCaptureDialogMobile({
               <div className="p-4 border-t border-white/20">
                 <div className="flex gap-3">
                   <Button
-                    variant="outline"
-                    onClick={() => setImages([])}
-                    disabled={images.length === 0}
-                    className="flex-1 bg-red-500/20 border-red-500/30 text-white hover:bg-red-500/30 hover:text-white"
-                  >
-                    Clear All
-                  </Button>
-                  <Button
                     onClick={() => {
                       if (!session) return;
                       if (!summary.trim()) {
@@ -330,7 +322,14 @@ export function ImageCaptureDialogMobile({
                     disabled={images.length === 0 || isSaving}
                     className="flex-1 bg-primary hover:bg-primary text-white"
                   >
-                    Save All
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Saving to Google Drive...
+                    </>
+                  ) : (
+                      "Save All"
+                  )}
                   </Button>
                 </div>
               </div>
