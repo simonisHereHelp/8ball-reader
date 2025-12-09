@@ -281,16 +281,18 @@ export function ImageCaptureDialogMobile({
                 </div>
 
                 {/* Summary displayed here */}
-                {summary && (
-                  <div className="mt-2 p-3 rounded-lg bg-white/5 border border-white/10">
-                    <h4 className="text-xs font-semibold text-blue-200 mb-1">
-                      Summary（前 800 字）
-                    </h4>
-                    <p className="text-sm text-blue-100 whitespace-pre-wrap leading-relaxed">
-                      {summary}
-                    </p>
-                  </div>
-                )}
+                    {summary && (
+                      <div className="mt-2 p-3 rounded-lg bg-white/5 border border-white/10">
+                        <h4 className="text-xs font-semibold text-blue-200 mb-1">
+                          Summary (edit if need to)
+                        </h4>
+                        <textarea
+                          value={summary}
+                          onChange={(e) => setSummary(e.target.value)}
+                          className="w-full min-h-[120px] rounded-md bg-black/40 border border-blue-300/40 text-blue-50 text-sm px-3 py-2 whitespace-pre-wrap leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
+                      </div>
+                    )}
               </div>
 
               {/* Gallery Footer */}
