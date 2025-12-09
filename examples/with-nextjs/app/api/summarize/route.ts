@@ -12,51 +12,79 @@ const PROMPTS_URL =
 
 const CANONICALS_URL = "https://drive.google.com/uc?export=download&id=13-Z83OU_QYug7z0_6R1VtZ35HYQrwLIC"
 
-
 let cachedPrompts: PromptConfig | null = null;
 
 async function fetchPrompts(): Promise<PromptConfig> {
   if (cachedPrompts) return cachedPrompts;
 
   try {
-    // fetch prompts + taxonomy in parallel
-    const [promptsRes, canonicalsRes] = await Promise.all([
-      fetch(PROMPTS_URL),
-      fetch(CANONICALS_URL),
-    ]);
+    // 1) Fetch prompts.json
+    const promptsRes = await fetch(PROMPTS_URL);
+    if (!promptsRes.ok) {
+      const body = await promptsRes.text().catch(() => "");
+      console.error("❌ PROMPTS fetch failed", promptsRes.status, body);
+      throw new Error(`PROMPTS HTTP ${promptsRes.status}`);
+    }
 
-    if (!promptsRes.ok) throw new Error(`PROMPTS HTTP ${promptsRes.status}`);
-    if (!canonicalsRes.ok) throw new Error(`CANONICALS HTTP ${canonicalsRes.status}`);
+    const promptsText = await promptsRes.text();
+    console.log("📄 Raw prompts.json:", promptsText);
 
-    const prompts = (await promptsRes.json()) as Partial<PromptConfig>;
-    const canonicals = (await canonicalsRes.json()) as {
-      issuer?: { canonical?: string[] };
-      doc_type?: { canonical?: string[] };
-      action?: { canonical?: string[] };
-    };
+    let prompts: any;
+    try {
+      prompts = JSON.parse(promptsText);
+    } catch (e) {
+      console.error("❌ Failed to parse prompts.json as JSON", e);
+      throw e;
+    }
 
     if (!prompts.system || !prompts.user) {
+      console.error("❌ Missing 'system' or 'user' fields in prompts.json", prompts);
       throw new Error("Missing prompt fields");
+    }
+
+    // 2) Fetch taxonomy (canonicals)
+    const canonicalsRes = await fetch(CANONICALS_URL);
+    if (!canonicalsRes.ok) {
+      const body = await canonicalsRes.text().catch(() => "");
+      console.error("❌ CANONICALS fetch failed", canonicalsRes.status, body);
+      throw new Error(`CANONICALS HTTP ${canonicalsRes.status}`);
+    }
+
+    const canonicalsText = await canonicalsRes.text();
+    console.log("📄 Raw taxonomy.json:", canonicalsText);
+
+    let canonicals: any;
+    try {
+      canonicals = JSON.parse(canonicalsText);
+    } catch (e) {
+      console.error("❌ Failed to parse taxonomy.json as JSON", e);
+      throw e;
     }
 
     const issuerList = (canonicals.issuer?.canonical ?? []).join(", ");
     const typeList = (canonicals.doc_type?.canonical ?? []).join(", ");
     const actionList = (canonicals.action?.canonical ?? []).join(", ");
 
-    // inject taxonomy lists into the user template once
-    const userWithCanonicals = prompts.user
+    console.log("✅ Parsed issuerList:", issuerList);
+    console.log("✅ Parsed typeList:", typeList);
+    console.log("✅ Parsed actionList:", actionList);
+
+    const userWithCanonicals = (prompts.user as string)
       .replace(/\{\{\s*ISSUER_CANONICALS\s*\}\}/gi, issuerList)
       .replace(/\{\{\s*TYPE_CANONICALS\s*\}\}/gi, typeList)
       .replace(/\{\{\s*ACTION_CANONICALS\s*\}\}/gi, actionList);
 
     cachedPrompts = {
-      system: prompts.system,
+      system: prompts.system as string,
       user: userWithCanonicals,
       wordTarget:
         typeof prompts.wordTarget === "number" ? prompts.wordTarget : 100,
     };
-  } catch {
-    // fallback prompt if anything goes wrong
+
+    console.log("✅ Final cachedPrompts:", cachedPrompts);
+  } catch (err) {
+    console.error("❌ fetchPrompts failed, using fallback:", err);
+
     cachedPrompts = {
       system: "You are a document reader.",
       user: "Summarize these documents in about {{wordTarget}} words.",
