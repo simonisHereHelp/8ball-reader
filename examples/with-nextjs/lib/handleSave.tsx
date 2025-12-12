@@ -1,4 +1,4 @@
-// app/lib/handleSave.ts
+// app/lib/handleSave.ts (-)
 
 export interface Image {
   url: string;
@@ -59,14 +59,44 @@ export const handleSave = async ({
       throw new Error(message || "Failed to save files to Google Drive.");
     }
 
+
     const json = (await response.json().catch(() => null)) as
       | { setName?: string }
       | null;
+    
+    const finalSetName = json?.setName ?? "";
+
+    // 2️⃣ hello-world trial: ping /api/update-canonicals
+    try {
+                // Call the endpoint. The browser must send session cookies.
+                const response = await fetch("/api/update-canonicals", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    // 'include' ensures cookies (like next-auth session cookie) are sent
+                    credentials: "include" 
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Server Error: ${response.status} - ${errorData.error}`);
+                }
+
+                const result = await response.json();
+                console.log("Success:", result);
+    } catch (e) {
+      // canonicals update should not block main save flow
+      console.error("Error calling /api/update-canonicals:", e);
+    }
+
 
     // 🔔 let the UI know the final server-side setName (if provided)
     if (onSuccess) {
       onSuccess(json?.setName ?? "");
     }
+    
+
   } catch (error) {
     console.error("Failed to save images:", error);
     onError?.("Unable to save captured images. Please try again.");

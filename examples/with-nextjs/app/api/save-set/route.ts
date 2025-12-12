@@ -1,11 +1,11 @@
 // app/api/save-set/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { driveEditFile } from "@/lib/driveEditFile";
+import { driveSaveFiles } from "@/lib/driveSaveFiles";
+
 
 export const runtime = "nodejs"; // ensure Node APIs like Buffer are available
-
-const DRIVE_UPLOAD_URL =
-  "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,webContentLink";
 
 const PROMPTS_URL =
   process.env.PROMPTS_URL ??
@@ -62,70 +62,6 @@ async function fetchPrompts(): Promise<PromptConfig> {
 
 function buildUserPrompt(template: string, words: number) {
   return template.replace(/\{\{\s*wordTarget\s*\}\}/gi, String(words));
-}
-
-// Node-style multipart body for Google Drive
-function buildMultipartBody(
-  boundary: string,
-  metadata: Record<string, unknown>,
-  fileBuffer: Buffer,
-  mimeType: string,
-) {
-  const delimiter = `\r\n--${boundary}\r\n`;
-  const closeDelimiter = `\r\n--${boundary}--`;
-
-  const metaPart =
-    delimiter +
-    "Content-Type: application/json; charset=UTF-8\r\n\r\n" +
-    JSON.stringify(metadata);
-
-  const filePartHeader =
-    delimiter +
-    `Content-Type: ${mimeType || "application/octet-stream"}\r\n\r\n`;
-
-  const endPart = closeDelimiter;
-
-  return Buffer.concat([
-    Buffer.from(metaPart, "utf8"),
-    Buffer.from(filePartHeader, "utf8"),
-    fileBuffer,
-    Buffer.from(endPart, "utf8"),
-  ]);
-}
-
-async function uploadToDrive({
-  accessToken,
-  folderId,
-  name,
-  buffer,
-  mimeType,
-}: {
-  accessToken: string;
-  folderId: string;
-  name: string;
-  buffer: Buffer;
-  mimeType: string;
-}) {
-  const boundary = "drive-boundary-" + Date.now() + Math.random().toString(16);
-  const metadata = { name, parents: [folderId] };
-  const body = buildMultipartBody(boundary, metadata, buffer, mimeType);
-
-  const res = await fetch(DRIVE_UPLOAD_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": `multipart/related; boundary=${boundary}`,
-    },
-    body,
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    console.error("Drive upload failed", res.status, text);
-    throw new Error("Drive upload failed: " + text);
-  }
-
-  return res.json();
 }
 
 // 用 ChatGPT 根據 summary 產生「單位-性質-行動」，再加上日期 => setName
@@ -233,31 +169,20 @@ export async function POST(request: Request) {
   }
 
   // 🔧 TEST RUN: overwrite a specific Drive file with "Hello World"
-  // Put the fileId in env or hardcode temporarily.
-  const TARGET_FILE_ID =
-    process.env.TARGET_FILE_ID ?? "1TF4cl7w8_GG8OyCXy8qDFJB7DqTpiOUV";
+  try {
+    const TARGET_FILE_ID =
+      process.env.TARGET_FILE_ID ?? "1TF4cl7w8_GG8OyCXy8qDFJB7DqTpiOUV";
 
-  const uploadUrl = `https://www.googleapis.com/upload/drive/v3/files/${TARGET_FILE_ID}?uploadType=media`;
+    const meta = await driveEditFile({
+      accessToken,
+      fileId: TARGET_FILE_ID,
+      content: "Hello World",
+    });
 
-  const uploadRes = await fetch(uploadUrl, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "text/plain; charset=utf-8",
-    },
-    body: "Hello World",
-  });
-
-  if (!uploadRes.ok) {
-    const errText = await uploadRes.text().catch(() => "");
-    return NextResponse.json(
-      { error: `HelloWorld overwrite failed: ${uploadRes.status} ${errText}` },
-      { status: 500 },
-    );
+    console.log("resp", meta);
+  } catch (e) {
+    console.error("HelloWorld overwrite test failed:", e);
   }
-
-  const meta = await uploadRes.json().catch(() => null);
-  console.log("resp", meta);
 
   // end of test run -> meta
 
@@ -294,14 +219,24 @@ export async function POST(request: Request) {
         ? file.name
         : `${setName}.${extension ?? "dat"}`;
 
-      const buffer = Buffer.from(await file.arrayBuffer());
-      await uploadToDrive({
-        accessToken,
-        folderId,
-        name: baseName,
-        buffer,
-        mimeType: file.type,
-      });
+        await driveSaveFiles({
+          accessToken,
+          folderId,
+          files,
+          fileToUpload: async (file) => {
+            const extension = file.name.split(".").pop();
+            const baseName = file.name.includes(setName)
+              ? file.name
+              : `${setName}.${extension ?? "dat"}`;
+
+            return {
+              name: baseName,
+              buffer: Buffer.from(await file.arrayBuffer()),
+              mimeType: file.type,
+            };
+          },
+        });
+
     }
 
     return NextResponse.json({ setName });
