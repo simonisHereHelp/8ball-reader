@@ -150,39 +150,39 @@ export async function POST(request: Request) {
   }
 
   // 🔐 use NextAuth session (server-side) instead of trusting client
-  const session = await auth();
+  // const session = await auth();
 
-  if (!session) {
-    return NextResponse.json(
-      { error: "Not authenticated." },
-      { status: 401 },
-    );
-  }
+  // if (!session) {
+  //   return NextResponse.json(
+  //     { error: "Not authenticated." },
+  //     { status: 401 },
+  //   );
+  // }
 
-  const accessToken = (session as any)?.accessToken as string | undefined;
+  // const accessToken = (session as any)?.accessToken as string | undefined;
 
-  if (!accessToken) {
-    return NextResponse.json(
-      { error: "Missing Google Drive access token on session." },
-      { status: 401 },
-    );
-  }
+  // if (!accessToken) {
+  //   return NextResponse.json(
+  //     { error: "Missing Google Drive access token on session." },
+  //     { status: 401 },
+  //   );
+  // }
 
   // 🔧 TEST RUN: overwrite a specific Drive file with "Hello World"
-  try {
-    const TARGET_FILE_ID =
-      process.env.TARGET_FILE_ID ?? "1TF4cl7w8_GG8OyCXy8qDFJB7DqTpiOUV";
+  // try {
+  //   const TARGET_FILE_ID =
+  //     process.env.TARGET_FILE_ID ?? "1TF4cl7w8_GG8OyCXy8qDFJB7DqTpiOUV";
 
-    const meta = await driveEditFile({
-      accessToken,
-      fileId: TARGET_FILE_ID,
-      content: "Hello World",
-    });
+  //   const meta = await driveEditFile({
+  //     accessToken,
+  //     fileId: TARGET_FILE_ID,
+  //     content: "Hello World",
+  //   });
 
-    console.log("resp", meta);
-  } catch (e) {
-    console.error("HelloWorld overwrite test failed:", e);
-  }
+  //   console.log("resp", meta);
+  // } catch (e) {
+  //   console.error("HelloWorld overwrite test failed:", e);
+  // }
 
   // end of test run -> meta
 
@@ -211,38 +211,29 @@ export async function POST(request: Request) {
 
   // ✅ 優先使用 client setName（若你未來要從前端傳固定標籤），否則用 GPT 從 summary 推出 setName
   const setName = setNameFromClient || (await deriveSetNameFromSummary(summary));
+    try {
+      await driveSaveFiles({
+        folderId,
+        files,
+        fileToUpload: async (file) => {
+          const extension = file.name.split(".").pop();
+          const baseName = file.name.includes(setName)
+            ? file.name
+            : `${setName}.${extension ?? "dat"}`;
 
-  try {
-    for (const file of files) {
-      const extension = file.name.split(".").pop();
-      const baseName = file.name.includes(setName)
-        ? file.name
-        : `${setName}.${extension ?? "dat"}`;
+          return {
+            name: baseName,
+            buffer: Buffer.from(await file.arrayBuffer()),
+            mimeType: file.type,
+          };
+        },
+      });
 
-        await driveSaveFiles({
-          accessToken,
-          folderId,
-          files,
-          fileToUpload: async (file) => {
-            const extension = file.name.split(".").pop();
-            const baseName = file.name.includes(setName)
-              ? file.name
-              : `${setName}.${extension ?? "dat"}`;
-
-            return {
-              name: baseName,
-              buffer: Buffer.from(await file.arrayBuffer()),
-              mimeType: file.type,
-            };
-          },
-        });
-
+      // ✅ success response
+      return NextResponse.json({ setName }, { status: 200 });
+    } catch (err) {
+      console.error("driveSaveFiles failed:", err);
+      // ❌ error response
+      return new NextResponse("save-set failed.", { status: 500 });
     }
-
-    return NextResponse.json({ setName });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to upload files";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
 }
