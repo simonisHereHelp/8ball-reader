@@ -151,7 +151,7 @@ export async function POST(request: Request) {
   // 🔧 overwrite a specific Drive file with "Hello World"
   try {
     const TARGET_FILE_ID =
-      process.env.TARGET_FILE_ID ?? "13-Z83OU_QYug7z0_6R1VtZ35HYQrwLIC";
+      process.env.GOOGLE_FILE_ID_CANONICALS;
     const JSON_CONTENT =
 `
 {
