@@ -150,112 +150,17 @@ export async function POST(request: Request) {
 
   // 🔧 overwrite a specific Drive file with "Hello World"
   try {
-    const TARGET_FILE_ID =
+    const FILE_ID =
       process.env.GOOGLE_FILE_ID_CANONICALS;
-    const JSON_CONTENT =
-`
-{
-  "version": 1,
+      const meta = await driveEditFile({
+      fileId : FILE_ID,
+      issuer: "兆豐",
+      alias: "兆豐銀行alias_" + Date.now() 
 
-  "issuer": {
-    "canonical": [
-      "兆豐",
-      "陽明瓦斯",
-      "台北自來水",
-      "中華電信",
-      "勞保局",
-      "健保局",
-      "Bank of America",
-      "Jackson Insurance",
-      "Thermo Fisher"
-    ],
-    "aliases": {
-      "兆豐銀行": "兆豐",
-      "兆豐商銀": "兆豐",
-
-      "陽明瓦斯公司": "陽明瓦斯",
-
-      "台北自來水事業處": "台北自來水",
-      "台北自來水公司": "台北自來水",
-
-      "中華電信股份有限公司": "中華電信",
-      "CHT": "中華電信",
-
-      "勞工保險局": "勞保局",
-      "勞保局勞工保險": "勞保局",
-
-      "健保署": "健保局",
-      "中央健康保險署": "健保局",
-
-      "BOA": "Bank of America",
-
-      "Jackson Nat'l": "Jackson Insurance",
-      "Jackson National": "Jackson Insurance",
-      "Jackson": "Jackson Insurance",
-
-      "ThermoFisher Scientific": "Thermo Fisher",
-      "Thermo Fisher Scientific": "Thermo Fisher",
-      "TFS": "Thermo Fisher"
-    },
-    "fallback": "其他單位"
-  },
-
-  "doc_type": {
-    "canonical": [
-      "薪資明細",
-      "收入報告",
-      "帳單",
-      "通知",
-      "報表",
-      "一般文件"
-    ],
-    "aliases": {
-      "薪資報表": "薪資明細",
-      "薪資紀錄": "薪資明細",
-
-      "收入報表": "收入報告",
-      "收益報告": "收入報告",
-
-      "電子帳單": "帳單",
-      "繳費單": "帳單",
-
-      "通知書": "通知",
-      "公告": "通知"
-    },
-    "fallback": "一般文件"
-  },
-
-  "action": {
-    "canonical": [
-      "請確認",
-      "請繳費",
-      "一般處理",
-      "無需處理",
-      "其他行動"
-    ],
-    "aliases": {
-      "確認領取": "請確認",
-      "請確認薪資": "請確認",
-      "請核對": "請確認",
-
-      "付款": "請繳費",
-      "繳費": "請繳費",
-      "請付款": "請繳費",
-
-      "處理即可": "一般處理",
-      "一般辦理": "一般處理"
-    },
-    "fallback": "其他行動"
-  }
-}
-`
-    const meta = await driveEditFile({
-      fileId: TARGET_FILE_ID,
-      content: JSON_CONTENT,
     });
   } catch (e) {
-    console.error("HelloWorld overwrite test failed:", e);
-    return new NextResponse("Hello World over write failed.", { status: 500 });
+    console.error("JSON overwrite test failed:", e);
+    return new NextResponse("canonicals JSON over write failed.", { status: 500 });
   }
 
   // end of test run -> meta
