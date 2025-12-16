@@ -11,15 +11,15 @@ export interface Image {
  */
 export const handleSave = async ({
   images,
-  draftSummary, // NEW: Original LLM output
-  editableSummary, // NEW: Edited and final content
+  draftSummary, // Retained in function signature to match caller, but ignored in body logic
+  editableSummary, 
   setIsSaving,
   onError,
   onSuccess,
 }: {
   images: Image[];
-  draftSummary: string; // NEW PARAM
-  editableSummary: string; // NEW PARAM (Used as the final summary content)
+  draftSummary: string; // Original LLM output (Ignored for JSON/POST body content)
+  editableSummary: string; // Edited and final content
   setIsSaving: (isSaving: boolean) => void;
   onError?: (message: string) => void;
   onSuccess?: (setName: string) => void;
@@ -36,26 +36,24 @@ export const handleSave = async ({
   try {
     const formData = new FormData();
 
-    // Use the final edited summary for the server to derive setName (as before)
+    // 1. Send the edited summary as the 'summary' form field (used for setName derivation)
     formData.append("summary", finalSummary);
 
-    // summary file — server will rename it to setName.json
-    // The JSON file now contains both the original draft and the final edited summary
+    // 2. summary.json file — server will rename it to setName.json
+    // JSON content now includes ONLY the 'summary' (final edited content), as requested.
     const summaryFile = new File(
-      [JSON.stringify({ 
-        draftSummary: draftSummary.trim(), // Include the original draft
-        summary: finalSummary,           // Include the final edited content
-      }, null, 2)],
+      [JSON.stringify({ summary: finalSummary }, null, 2)],
       "summary.json",
       { type: "application/json" },
     );
     formData.append("files", summaryFile);
 
-    // all captured images — server will rename to {setName}-pX.ext or similar
+    // 3. all captured images — server will rename to {setName}-pX.ext or similar
     images.forEach((image) => {
       formData.append("files", image.file);
     });
 
+    // API call to the correct endpoint
     const response = await fetch("/api/save-set", {
       method: "POST",
       body: formData,
@@ -66,44 +64,15 @@ export const handleSave = async ({
       throw new Error(message || "Failed to save files to Google Drive.");
     }
 
-
     const json = (await response.json().catch(() => null)) as
       | { setName?: string }
       | null;
-    
-    const finalSetName = json?.setName ?? "";
-
-    // 2️⃣ hello-world trial: ping /api/update-canonicals
-    try {
-                // Call the endpoint. The browser must send session cookies.
-                const response = await fetch("/api/update-canonicals", {
-                    method: "POST",
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    // 'include' ensures cookies (like next-auth session cookie) are sent
-                    credentials: "include" 
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Server Error: ${response.status} - ${errorData.error}`);
-                }
-
-                const result = await response.json();
-                console.log("Success:", result);
-    } catch (e) {
-      // canonicals update should not block main save flow
-      console.error("Error calling /api/update-canonicals:", e);
-    }
-
 
     // 🔔 let the UI know the final server-side setName (if provided)
     if (onSuccess) {
       onSuccess(json?.setName ?? "");
     }
     
-
   } catch (error) {
     console.error("Failed to save images:", error);
     onError?.("Unable to save captured images. Please try again.");
