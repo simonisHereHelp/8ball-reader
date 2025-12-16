@@ -1,8 +1,9 @@
 // app/api/update-issuerCanon/route.ts
 
 import { NextResponse } from "next/server";
-// ✅ 匯入名稱修正為 driveUpdateCanon
 import { driveUpdateCanon } from "@/lib/driveUpdateCanon"; 
+// ✅ 更新匯入名稱
+import { driveOverwriteCanon } from "@/lib/driveOverwriteCanon"; 
 import { auth } from "@/auth";
 
 export const runtime = "nodejs";
@@ -40,12 +41,14 @@ async function fetchCanonicalFileContent(): Promise<string> {
 
 
 export async function POST(request: Request) {
+    // 1. 檢查關鍵環境變數
     if (!CANONICAL_FILE_ID) {
         console.error("❌ Configuration Error: DRIVE_FILE_ID_CANONICALS is missing.");
         return NextResponse.json({ error: "Missing DRIVE_FILE_ID_CANONICALS configuration." }, { status: 500 });
     }
 
     try {
+        // 2. 解析請求主體
         const { draftSummary, editableSummary } = (await request.json()) as { 
             draftSummary: string; 
             editableSummary: string;
@@ -55,24 +58,31 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Missing summaries in request body." }, { status: 400 });
         }
 
-        // 3. 獲取 Canonical Bible 內容
+        // 3. 獲取 Canonical Bible 內容 (讀取操作)
         const canonicalBibleJson = await fetchCanonicalFileContent();
 
-        // 4. 呼叫輔助函數，獲取 GPT 判斷結果
-        // ✅ 使用修正後的函式名稱
+        // 4. 呼叫輔助函數，獲取 GPT 判斷結果 (計算操作)
         const { canonical, alias } = await driveUpdateCanon({
             canonicalBibleJson,
             draftSummary,
             editableSummary
         });
 
-        // 5. 決定更新行動，但不執行 Drive 寫入操作 (已移除 driveEditFile)
+        // 5. 決定更新行動，並執行 Drive 寫入操作 (PATCH)
         if (canonical && alias) {
-            console.log(`✅ [SKIPPED] Canonical update calculated: ${canonical} -> ${alias}. (Drive write operation removed by request)`);
+            
+            // ✅ 呼叫新的函式名稱
+            const updatedContent = await driveOverwriteCanon({
+                fileId: CANONICAL_FILE_ID,
+                canonical: canonical,
+                alias: alias
+            });
+            
+            console.log(`✅ Canonical update persisted: ${canonical} -> ${alias}. New file size: ${updatedContent.length} bytes.`);
             
             return NextResponse.json({ 
-                status: "UPDATE_CALCULATED_ONLY", 
-                message: "Canonical update calculated but Drive write operation was skipped.",
+                status: "UPDATE_PERSISTED", 
+                message: "Canonical update calculated and successfully written to Google Drive.",
                 canonical, 
                 alias 
             }, { status: 200 });
