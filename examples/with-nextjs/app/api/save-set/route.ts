@@ -148,8 +148,6 @@ export async function POST(request: Request) {
   const draftSummary = (formData.get("draftSummary") as string | null)?.trim() ?? "";
   // 這是使用者編輯後的最終摘要 (用於產生最終 setName)
   const summary = (formData.get("summary") as string | null)?.trim() ?? "";
-  const setNameFromClient =
-    (formData.get("setName") as string | null)?.trim() ?? "";
   const files = formData
     .getAll("files")
     .filter((file): file is File => file instanceof File);
@@ -173,10 +171,8 @@ export async function POST(request: Request) {
     const canonicalsJson = await fetchCanonicalFileContent(); 
 
     // 2. 決定 setName：
-    // 優先使用客戶端提供的 setNameFromClient，否則通過 GPT 從編輯後摘要 (summary) 生成
-    const setName =
-      setNameFromClient ||
-      (await deriveSetNameFromSummary(summary, canonicalsJson)); 
+    // 通過 GPT 從編輯後摘要 (summary) 生成
+    const setName = deriveSetNameFromSummary(summary, canonicalsJson); 
 
     // 3. 執行 Drive 儲存操作 (File Saving)
     await driveSaveFiles({
