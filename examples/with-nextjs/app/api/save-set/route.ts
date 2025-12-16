@@ -1,16 +1,21 @@
 // app/api/save-set/route.ts
 import { NextResponse } from "next/server";
-import { Buffer } from "buffer"; // ✅ 新增：確保 Buffer 可用
+import { Buffer } from "buffer"; 
 import { driveSaveFiles } from "@/lib/driveSaveFiles";
-import { fetchCanonicalFileContent } from "@/lib/driveCanonUtils"; // ✅ 使用 driveCanonUtils
+import { fetchCanonicalFileContent } from "@/lib/driveCanonUtils"; 
 
-export const runtime = "nodejs"; // ensure Node APIs like Buffer are available
+// 🎯 新增：Canonical 更新所需的函式與常數
+import { driveUpdateCanon } from "@/lib/driveUpdateCanon"; 
+import { driveOverwriteCanon } from "@/lib/driveOverwriteCanon"; 
+const CANONICAL_FILE_ID = process.env.DRIVE_FILE_ID_CANONICALS; 
+
+export const runtime = "nodejs"; 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID; // 使用 DRIVE_FOLDER_ID
+const DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID; 
 
 const PROMPTS_URL =
   process.env.PROMPTS_URL ??
-  "https://drive.google.com/uc?export=download&id=1srQP_Ekw79v45jgkwgeV67wx6j9OcmII"; //prompt_4_setName
+  "https://drive.google.com/uc?export=download&id=1srQP_Ekw79v45jgkwgeV67wx6j9OcmII";
 
 
 type PromptConfig = {
@@ -21,7 +26,7 @@ type PromptConfig = {
 
 let cachedPrompts: PromptConfig | null = null;
 
-// 讀取遠端 prompts.json（system / user / wordTarget）
+// 讀取遠端 prompts.json（靜態 Prompt 模板）
 async function fetchPrompts(): Promise<PromptConfig> {
   if (cachedPrompts) return cachedPrompts;
 
@@ -37,25 +42,21 @@ async function fetchPrompts(): Promise<PromptConfig> {
     system: prompts.system,
     user: prompts.user,
     wordTarget:
-      typeof prompts.wordTarget === "number" ? prompts.wordTarget : 300,
+      typeof prompts.wordTarget === "number" ? prompts.wordTarget : 100,
   };
 
   return cachedPrompts;
 }
 
 
-// 註：此處的 buildUserPrompt 函式在新的 Prompt 結構下已不需要
-// 因為新的 Prompt 是直接替換 {{CANONICALS_JSON}} 和 {{SUMMARY}} 佔位符。
-// 為了保持與舊函式簽名兼容，將其簡化為只返回模板。
 function buildUserPrompt(template: string, words: number) {
-  // 替換 {{wordTarget}}，儘管在新標籤 Prompt 中可能未使用
   return template.replace(/\{\{\s*wordTarget\s*\}\}/gi, String(words));
 }
 
-// ✅ 修正：新增 canonicalsJson 參數
+// 用 ChatGPT 根據 summary 與 Canonicals 產生「單位-性質-行動」，再加上日期 => setName
 async function deriveSetNameFromSummary(
   summary: string,
-  canonicalsJson: string,
+  canonicalsJson: string, 
 ): Promise<string> {
   const trimmed = summary.trim();
 
@@ -79,13 +80,13 @@ async function deriveSetNameFromSummary(
   }
 
   try {
-    const prompts = await fetchPrompts();
-    const wordTarget = prompts.wordTarget ?? 300;
+    const prompts = await fetchPrompts(); 
+    const wordTarget = prompts.wordTarget ?? 100;
     const userPromptTemplate = buildUserPrompt(prompts.user, wordTarget);
 
-    // ✅ 修正：將 canonicalsJson 和 summary 注入 User Prompt
+    // 將 Canonicals 清單和 Summary 注入 User Prompt
     const userContent = userPromptTemplate
-      .replace("{{CANONICALS_JSON}}", canonicalsJson)
+      .replace("{{CANONICALS_JSON}}", canonicalsJson) 
       .replace("{{SUMMARY}}", trimmed);
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -101,7 +102,7 @@ async function deriveSetNameFromSummary(
           { role: "user", content: userContent },
         ],
         max_tokens: 64,
-        temperature: 0, // 增加穩定性
+        temperature: 0, 
       }),
     });
 
@@ -121,8 +122,8 @@ async function deriveSetNameFromSummary(
     // 安全處理成檔名可用格式
     const safeLabel =
       label
-        .replace(/[\\\/:*?"<>|]/g, "-") // Windows/一般不允許字元
-        .replace(/\s+/g, "") // 通常標籤不需要空白
+        .replace(/[\\\/:*?"<>|]/g, "-") 
+        .replace(/\s+/g, "") 
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .slice(0, 80) || fallbackTitle;
@@ -143,6 +144,9 @@ export async function POST(request: Request) {
   }
 
   const formData = await request.formData();
+  // ✅ NEW: 接收原始 LLM 輸出的摘要，用於 Canonical Learning
+  const draftSummary = (formData.get("draftSummary") as string | null)?.trim() ?? "";
+  // 這是使用者編輯後的最終摘要 (用於產生最終 setName)
   const summary = (formData.get("summary") as string | null)?.trim() ?? "";
   const setNameFromClient =
     (formData.get("setName") as string | null)?.trim() ?? "";
@@ -165,28 +169,28 @@ export async function POST(request: Request) {
   }
   
   try {
-    // 1. 獲取 Canonicals 清單
-    const canonicalsJson = await fetchCanonicalFileContent(); // ✅ 使用 driveCanonUtils
+    // 1. 獲取 Canonicals 清單 (動態數據)
+    const canonicalsJson = await fetchCanonicalFileContent(); 
 
-    // 2. 決定 setName：優先使用客戶端提供的名稱，否則通過 GPT 生成
+    // 2. 決定 setName：
+    // 優先使用客戶端提供的 setNameFromClient，否則通過 GPT 從編輯後摘要 (summary) 生成
     const setName =
       setNameFromClient ||
-      (await deriveSetNameFromSummary(summary, canonicalsJson)); // ✅ 傳入 canonicalsJson
+      (await deriveSetNameFromSummary(summary, canonicalsJson)); 
 
-    // 3. 執行 Drive 儲存操作
+    // 3. 執行 Drive 儲存操作 (File Saving)
     await driveSaveFiles({
-      folderId: DRIVE_FOLDER_ID, // ✅ 修正：使用 folderId 命名
+      folderId: DRIVE_FOLDER_ID, 
       files,
       fileToUpload: async (file) => {
-        const baseName = setName.replace(/[\\/:*?"<>|]/g, "_"); // 清理非法字元
+        const baseName = setName.replace(/[\\/:*?"<>|]/g, "_"); 
         const extension = file.name.split(".").pop();
 
-        // 命名邏輯：summary.json => setName.json；其他檔案 => setName-pX.ext
         let fileName: string;
         if (file.name === "summary.json") {
             fileName = `${baseName}.json`;
         } else {
-            // 找到第一個非 summary.json 檔案的索引
+            // 找到非 summary.json 檔案的索引
             const imageIndex = files.filter(f => f.name !== "summary.json").indexOf(file) + 1;
             fileName = `${baseName}-p${imageIndex}.${extension ?? "dat"}`;
         }
@@ -198,6 +202,32 @@ export async function POST(request: Request) {
         };
       },
     });
+
+    // ⭐ 4. Canonical Update (Learning) - 確保在文件儲存後執行
+    // 這一步是為了實現：Canonical(勞保局) -> Alias(勞保單位)
+    if (draftSummary && summary && CANONICAL_FILE_ID) {
+        try {
+            // 4a. 呼叫 GPT 輔助函數，比較 draft/edited summary，以獲取 Canonical/Alias
+            const { canonical, alias } = await driveUpdateCanon({
+                canonicalBibleJson: canonicalsJson,
+                draftSummary: draftSummary, // 原始 LLM 輸出
+                editableSummary: summary,    // 最終編輯內容
+            });
+
+            // 4b. 若需要更新，則執行 Drive 寫入操作
+            if (canonical && alias) {
+                await driveOverwriteCanon({
+                    fileId: CANONICAL_FILE_ID,
+                    canonical: canonical,
+                    alias: alias,
+                });
+                console.log(`✅ Canonical update in save-set: ${canonical} -> ${alias}`);
+            }
+        } catch (e) {
+            // Canonical update 是非關鍵的 side effect，不應中斷文件儲存的成功回應
+            console.error("Canonical update failed (non-critical):", e);
+        }
+    }
 
     // ✅ success response
     return NextResponse.json({ setName }, { status: 200 });
