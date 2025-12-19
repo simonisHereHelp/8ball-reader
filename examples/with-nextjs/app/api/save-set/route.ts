@@ -9,8 +9,7 @@ export const runtime = "nodejs";
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const DRIVE_FOLDER_ID = process.env.DRIVE_FOLDER_ID;
 const CANONICAL_FILE_ID = process.env.DRIVE_FILE_ID_CANONICALS;
-const PROMPT_ID = process.env.PROMPT_SET_NAME_JSON_ID ??
-  "https://drive.google.com/uc?export=download&id=1srQP_Ekw79v45jgkwgeV67wx6j9OcmII";
+const PROMPT_ID = process.env.PROMPT_SET_NAME_JSON_ID ?? "1srQP_Ekw79v45jgkwgeV67wx6j9OcmII";
 /**
  * 根據摘要產生檔案名稱標籤
  */
