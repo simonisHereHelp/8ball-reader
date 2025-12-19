@@ -15,14 +15,14 @@ export async function POST(request: Request) {
 
     try {
         // Match the call method: { draftSummary, editableSummary }
-        const { draftSummary, editableSummary } = await request.json();
+        const { draftSummary, finalSummary } = await request.json();
 
-        if (!draftSummary || !editableSummary) {
+        if (!draftSummary || !finalSummary) {
             return NextResponse.json({ error: "Missing summaries in request body." }, { status: 400 });
         }
 
         // 1. Extract Issuer Name (Master) from the final edited summary
-        const issuerName = await GPT_Router.getIssuerName(editableSummary);
+        const issuerName = await GPT_Router.getIssuerName(finalSummary);
         
         // 2. Extract Issuer Alias from the original draft summary (what GPT originally saw)
         const issuerAlias = await GPT_Router.getIssuerName(draftSummary);
