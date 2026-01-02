@@ -3,6 +3,7 @@
 import {
   Camera,
   CameraOff,
+  Image as ImageIcon,
   Loader2,
   RefreshCcw,
   Save,
@@ -23,19 +24,27 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   const {
     images,
     isSaving,
+    isProcessingCapture,
+    isSwitchingSource,
     cameraError,
     facingMode,
+    captureSource,
     error,
     saveMessage,
   } = state;
   const {
     handleCapture,
+    handleAlbumSelect,
     handleCameraSwitch,
     handleSummarize,
     handleClose,
     setShowGallery,
     setCameraError,
+    setCaptureSource,
+    setError,
   } = actions;
+
+  const isCameraSelected = captureSource === "camera";
 
   const latestImage = images.length > 0 ? images[images.length - 1] : null;
 
@@ -43,13 +52,38 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
     <>
       {/* Camera View Area */}
       <div className="flex-1 relative p-0.5">
-        {cameraError ? (
+        <div className="absolute top-4 left-0 right-0 flex justify-center z-20">
+          <div className="inline-flex rounded-full bg-black/40 backdrop-blur-md p-1 text-white shadow-lg gap-1">
+            <button
+              className={`px-4 py-2 text-sm rounded-full transition-colors ${
+                isCameraSelected ? "bg-white text-black" : "hover:bg-white/10"
+              }`}
+              onClick={() => setCaptureSource("camera")}
+              disabled={isSwitchingSource}
+            >
+              Camera
+            </button>
+            <button
+              className={`px-4 py-2 text-sm rounded-full transition-colors ${
+                !isCameraSelected ? "bg-white text-black" : "hover:bg-white/10"
+              }`}
+              onClick={() => setCaptureSource("photos")}
+              disabled={isSwitchingSource}
+            >
+              Photos
+            </button>
+          </div>
+        </div>
+
+        {cameraError && isCameraSelected ? (
           <div className="flex flex-col items-center justify-center w-full h-full text-white/50">
             <CameraOff className="w-12 h-12 mb-4" />
             <p>Camera not available or permission denied.</p>
             <p className="text-sm">Please check your camera settings.</p>
           </div>
-        ) : (
+        ) : null}
+
+        {isCameraSelected && !cameraError && (
           <WebCamera
             ref={cameraRef}
             className="w-full h-full object-cover"
@@ -63,8 +97,77 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
             onError={(err) => {
               console.error("Camera error:", err);
               setCameraError(true);
+              setError("Camera permission denied or unavailable.");
             }}
           />
+        )}
+
+        {!isCameraSelected && (
+          <div className="w-full h-full rounded-lg overflow-hidden bg-black relative flex flex-col">
+            {latestImage ? (
+              <img
+                src={latestImage.url || "/placeholder.svg"}
+                alt="Selected from device"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-white/60 gap-2">
+                <ImageIcon className="w-10 h-10" />
+                <p className="text-sm">Pick a photo from your device</p>
+              </div>
+            )}
+
+            <div className="absolute top-4 right-4">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => setCaptureSource("camera")}
+                className="rounded-full bg-black/40 text-white hover:bg-black/60"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            <div className="absolute bottom-6 left-0 right-0 flex flex-col gap-3 px-8">
+              <Button
+                onClick={() => {
+                  const input = document.getElementById(
+                    "mobile-photo-picker",
+                  ) as HTMLInputElement | null;
+                  input?.click();
+                }}
+                disabled={isProcessingCapture}
+                className="w-full bg-white text-black hover:bg-gray-100 cursor-pointer"
+              >
+                {isProcessingCapture ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Loading photo...
+                  </>
+                ) : (
+                  "Choose a photo"
+                )}
+              </Button>
+              {latestImage && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowGallery(true)}
+                  className="w-full bg-white/10 text-white border-white/40 hover:bg-white/20 cursor-pointer"
+                >
+                  View gallery
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isProcessingCapture && (
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="bg-black/60 text-white px-4 py-3 rounded-full flex items-center gap-2 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Preparing image...
+            </div>
+          </div>
         )}
 
         {/* Capture Controls */}
@@ -98,7 +201,9 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
             {/* Capture Button */}
             <Button
               onClick={handleCapture}
-              disabled={isSaving}
+              disabled={
+                isSaving || !isCameraSelected || isProcessingCapture || cameraError
+              }
               className="w-20 h-20 rounded-full bg-white hover:bg-gray-100 text-black shadow-2xl border-4 border-white/50 cursor-pointer"
             >
               <Camera className="!w-8 !h-8" />
@@ -109,7 +214,9 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
               variant="outline"
               size="icon"
               onClick={handleCameraSwitch}
-              disabled={isSaving}
+              disabled={
+                isSaving || !isCameraSelected || isProcessingCapture || cameraError
+              }
               className="w-16 h-16 bg-white/20 border border-white/30 text-white hover:bg-white/30 backdrop-blur-md transition cursor-pointer"
             >
               <RefreshCcw
@@ -140,7 +247,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           <Button
             variant="default"
             onClick={handleSummarize}
-            disabled={isSaving || images.length === 0}
+            disabled={isSaving || images.length === 0 || isProcessingCapture}
             className="flex-1 bg-blue-400 hover:bg-blue-300 text-white cursor-pointer"
           >
             {isSaving ? (
@@ -169,6 +276,17 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           <p className="text-sm text-emerald-300">{saveMessage}</p>
         </div>
       )}
+
+      <input
+        id="mobile-photo-picker"
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          void handleAlbumSelect(event.target.files);
+          event.target.value = "";
+        }}
+      />
     </>
   );
 }
