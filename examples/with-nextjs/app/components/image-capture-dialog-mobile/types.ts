@@ -11,8 +11,11 @@ export interface State {
   images: Image[];
   facingMode: FacingMode;
   isSaving: boolean;
+  isProcessingCapture: boolean;
+  isSwitchingSource: boolean;
   showGallery: boolean;
   cameraError: boolean;
+  captureSource: "camera" | "photos";
   // RENAMED: summary -> draftSummary
   draftSummary: string;
   editableSummary: string;
@@ -26,6 +29,8 @@ export interface Actions {
   deleteImage: (index: number) => void;
   handleCapture: () => Promise<void>;
   handleCameraSwitch: () => Promise<void>;
+  handleAlbumSelect: (files: FileList | null) => Promise<void>;
+  setCaptureSource: (source: "camera" | "photos") => void;
   handleSummarize: () => Promise<void>;
   handleSaveImages: () => Promise<void>;
   handleClose: () => void;
@@ -34,4 +39,5 @@ export interface Actions {
   setDraftSummary: (summary: string) => void;
   setShowGallery: (show: boolean) => void;
   setCameraError: (error: boolean) => void;
+  setError: (message: string) => void;
 }
