@@ -1,40 +1,32 @@
 # React Web Camera
-
 A lightweight and flexible React component for capturing images from the user’s camera (front or back) with support for `jpeg`, `png`, and `webp` formats. Built with modern React (`hooks` + `forwardRef`) and works on both desktop and mobile browsers.
-## modualize and make as a container
 
-app/components/image-capture-dialog-mobile/
-├── ImageCaptureDialogMobile.tsx     // Main Container
-├── useImageCaptureState.ts          // Custom Hook for State & Logic
-├── CameraView.tsx                   // Renders Camera/Capture UI
-├── GalleryView.tsx                  // Renders Image Gallery/Summary/Save UI
-└── types.ts                         // Shared Interfaces
+# json_canon
+This project reads four JSON configs from the `json_canon/` folder by default (overridable via env paths/IDs). They drive summarization, file naming, and canonical updates.
 
-## 使用GPT ROUTER
-- 簡化PROMPT的生成
-- 智能判讀 summary
+## Files and env fallbacks
+- `prompt_summary.json` (`PROMPT_SUMMARY_JSON_PATH` or `PROMPT_SUMMARY_JSON_ID`) – system/user prompt templates for summarization.
+- `prompts_setName.json` (`PROMPT_SET_NAME_JSON_PATH` or `PROMPT_SET_NAME_JSON_ID`) – templates for GPT-derived filenames.
+- `prompts_issuerCanon.json` (`PROMPT_ISSUER_CANON_JSON_PATH` or `PROMPT_ISSUER_CANON_JSON_ID`) – issuer/canon prompt helpers (kept available for future GPT calls).
+- `canonicals_bible.json` (`CANONICALS_BIBLE_JSON_PATH` or `DRIVE_FILE_ID_CANONICALS`) – issuer/type/action dictionary used during prompt injection and updates.
 
-## 更改canonical.JSON 成功
-- canonicals.json 格式簡化
-- 修改JSON成功
+All sources resolve through `jsonCanonSources` so local paths and Drive IDs share the same code path.
 
-## helper成功：
-- driveSaveFiles & driveEditFile:
-- 標準化（auth位於lib的helper）
+## Where they are used
+- **getSystemPrompt / getUserPrompt** (`lib/gptRouter.ts`)
+  - `prompt_summary.json` injects canonical values into the summarize prompt for `/api/summarize`.
+  - `prompts_setName.json` injects the edited summary into the naming prompt for `/api/save-set`.
+- **handleSave flow** (`lib/handleSave.tsx`)
+  - Sends the edited summary + images to `/api/save-set`, which calls `getSystemPrompt`/`getUserPrompt` with `prompts_setName.json` before uploading to Drive.
+  - Triggers `/api/update-issuerCanon` after save so canon updates stay in sync.
+- **Update Canonicals** (`app/api/update-issuerCanon/route.ts`)
+  - `canonicals_bible.json` is fetched (local path or Drive) to resolve current issuers/types, and Drive writes are blocked when a local path is supplied.
+  - `prompts_issuerCanon.json` remains available for issuer prompt patterns if needed alongside the bible.
 
-## 手工改名成功：
-- test_text.txt 成功，接下來做成helpers
-
-## Summary editable (touch friendly 輸入，更改摘要 )
--主要變更在 image-capture-mobile.tsx
-
-## 納入 canonicals 管理
--canonicals.json 優先匹配字典
-
-## UI- main page <-> photo gallery
--兩個屏：攝像屏幕 + 畫冊
--按鈕與重點文字在下方，適合手機操作
--下一步：editor, 文件名+Json 文字編輯器
+## Quick endpoint map
+- `/api/summarize`: uses `prompt_summary.json` + `canonicals_bible.json` for injected system/user prompts.
+- `/api/save-set`: uses `prompts_setName.json` for naming and uploads all files to Drive.
+- `/api/update-issuerCanon`: reads/writes `canonicals_bible.json` (Drive only) to add masters/aliases after saves.
 
 ## 成功命名文件
 -命名例子：
@@ -120,99 +112,10 @@ This makes it:
 
 ---
 
-## Installation
-
-```bash
-# If using npm
-npm install @shivantra/react-web-camera
-```
-
-```bash
-# Or with yarn
-yarn add @shivantra/react-web-camera
-```
-
-```bash
-# Or with pnpm
-pnpm add @shivantra/react-web-camera
-```
-
 ---
 
 ## Usage
 
-- **Basic Example**
-
-```tsx
-import React, { useRef } from "react";
-import { WebCamera, WebCameraHandler } from "@shivantra/react-web-camera";
-
-function App() {
-  const cameraHandler = useRef<WebCameraHandler>(null);
-  const [images, setImages] = useState<string[]>([]);
-
-  async function handleCapture() {
-    const file = await cameraHandler.current?.capture();
-    if (file) {
-      const base64 = await fileToBase64(file);
-      setImages((_images) => [..._images, base64]);
-    }
-  }
-
-  function handleSwitch() {
-    cameraHandler.current?.switch();
-  }
-
-  return (
-    <div>
-      <div style={{ display: "flex", gap: 5 }}>
-        <button onClick={handleCapture}>Capture</button>
-        <button onClick={handleSwitch}>Switch</button>
-      </div>
-      <div>
-        <WebCamera
-          style={{ height: 500, width: 360, padding: 10 }}
-          videoStyle={{ borderRadius: 5 }}
-          captureMode="back"
-          ref={cameraHandler}
-        />
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-        {images.map((image, ind) => (
-          <img key={ind} src={image} style={{ height: 160, width: 200 }} />
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-- **Vite.js Example**
-
-```tsx
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { WebCamera } from "@shivantra/react-web-camera";
-
-function App() {
-  return (
-    <div>
-      <h1>📸 Vite + Webcam</h1>
-      <WebCamera
-        style={{ width: 320, height: 480, padding: 10 }}
-        videoStyle={{ borderRadius: 5 }}
-        className="camera-container"
-        videoClassName="camera-video"
-        captureMode="front"
-        captureType="png"
-        getFileName={() => `vite-photo-${Date.now()}.jpeg`}
-      />
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
-```
 
 - **Next.js Example (App Router)**
 
@@ -239,32 +142,6 @@ export default function CameraPage() {
 }
 ```
 
-- **PWA Example**
-
-```tsx
-import { WebCamera } from "@shivantra/react-web-camera";
-
-export default function PWAApp() {
-  return (
-    <div>
-      <h2>📱 PWA Webcam Ready</h2>
-      <WebCamera
-        style={{ width: 320, height: 480, padding: 10 }}
-        videoStyle={{ borderRadius: 5 }}
-        className="camera-container"
-        videoClassName="camera-video"
-        captureMode="back"
-        captureType="jpeg"
-        captureQuality={0.8}
-        getFileName={() => `pwa-photo-${Date.now()}.jpeg`}
-        onError={(err) => console.error(err)}
-      />
-    </div>
-  );
-}
-```
-
-> ✅ Works on mobile browsers and when installed as a PWA (HTTPS required for camera access).
 
 ---
 
