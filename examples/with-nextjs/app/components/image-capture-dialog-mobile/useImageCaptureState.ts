@@ -1,6 +1,6 @@
 // app/components/image-capture-dialog-mobile/useImageCaptureState.ts
 
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import type { WebCameraHandler, FacingMode } from "@shivantra/react-web-camera";
 import { useSession } from "next-auth/react";
 import { handleSave } from "@/lib/handleSave"; // Assuming path is correct
@@ -20,16 +20,16 @@ interface UseImageCaptureState {
 
 export const useImageCaptureState = (
   onOpenChange?: (open: boolean) => void,
+  initialSource: "camera" | "photos" = "camera",
 ): UseImageCaptureState => {
   const [images, setImages] = useState<Image[]>([]);
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingCapture, setIsProcessingCapture] = useState(false);
-  const [isSwitchingSource, setIsSwitchingSource] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const [captureSource, setCaptureSource] = useState<"camera" | "photos">(
-    "camera",
+    initialSource,
   );
   
   // RENAMED: summary -> draftSummary
@@ -43,6 +43,10 @@ export const useImageCaptureState = (
 
   const cameraRef = useRef<WebCameraHandler>(null);
   const { data: session } = useSession();
+
+  useEffect(() => {
+    setCaptureSource(initialSource);
+  }, [initialSource]);
 
   // --- Callbacks and Handlers ---
 
@@ -72,11 +76,10 @@ export const useImageCaptureState = (
     setSaveMessage("");
     setShowSummaryOverlay(false);
     setShowGallery(false);
-    setCaptureSource("camera");
+    setCaptureSource(initialSource);
     setIsProcessingCapture(false);
-    setIsSwitchingSource(false);
     onOpenChange?.(false);
-  }, [images.length, isSaving, onOpenChange]);
+  }, [images.length, initialSource, isSaving, onOpenChange]);
 
   const ingestFile = useCallback(
     async (file: File, source: "camera" | "photos", preferredName?: string) => {
@@ -140,17 +143,6 @@ export const useImageCaptureState = (
     [ingestFile],
   );
 
-  const handleSourceChange = useCallback(
-    (source: "camera" | "photos") => {
-      if (captureSource === source) return;
-      setIsSwitchingSource(true);
-      setError("");
-      setCaptureSource(source);
-      setTimeout(() => setIsSwitchingSource(false), 150);
-    },
-    [captureSource],
-  );
-
   const handleCameraSwitch = useCallback(async () => {
     if (!cameraRef.current) return;
     try {
@@ -161,6 +153,17 @@ export const useImageCaptureState = (
       console.error("Camera switch error:", err);
     }
   }, [facingMode]);
+
+  const handleSourceChange = useCallback(
+    (source: "camera" | "photos") => {
+      setCaptureSource(source);
+      setShowGallery(false);
+      setError("");
+      setSaveMessage("");
+      setCameraError(false);
+    },
+    [],
+  );
 
   const handleSummarize = useCallback(async () => {
     setSaveMessage("");
@@ -222,7 +225,6 @@ export const useImageCaptureState = (
     facingMode,
     isSaving,
     isProcessingCapture,
-    isSwitchingSource,
     showGallery,
     cameraError,
     captureSource,
