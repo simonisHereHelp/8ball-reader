@@ -1,5 +1,7 @@
 // app/lib/handleSave.ts
 
+import { playSuccessChime } from "../app/components/image-capture-dialog-mobile/soundEffects";
+
 export interface Image {
   url: string;
   file: File;
@@ -17,7 +19,7 @@ export interface SelectedCanonMeta {
 export const handleSave = async ({
   images,
   draftSummary, // ✅ 原始 LLM 輸出
-  editableSummary, // ✅ 用戶編輯後的最終摘要
+  finalSummary, // ✅ 用戶編輯後的最終摘要
   selectedCanon,
   setIsSaving,
   onError,
@@ -25,18 +27,18 @@ export const handleSave = async ({
 }: {
   images: Image[];
   draftSummary: string;
-  editableSummary: string;
+  finalSummary: string;
   selectedCanon?: SelectedCanonMeta | null;
   setIsSaving: (isSaving: boolean) => void;
   onError?: (message: string) => void;
-  onSuccess?: (setName: string) => void;
-}) => {
+  onSuccess?: (meta: { setName: string; targetFolderId?: string | null }) => void;
+}): Promise<boolean> => {
   // nothing to save
-  if (!images.length) return;
+  if (!images.length) return false;
 
-  const finalSummary = editableSummary.trim();
+  const trimmedFinalSummary = finalSummary.trim();
   // Check against the final edited summary
-  if (!finalSummary) return;
+  if (!trimmedFinalSummary) return false;
 
   setIsSaving(true);
 
@@ -44,14 +46,14 @@ export const handleSave = async ({
     const formData = new FormData();
 
     // 1. Send the edited summary as the 'summary' form field (used for setName derivation)
-    formData.append("summary", finalSummary);
+    formData.append("summary", trimmedFinalSummary);
 
     // 2. summary.json file — server will rename it to setName.json
     const summaryFile = new File(
       [
         JSON.stringify(
           {
-            summary: finalSummary,
+            summary: trimmedFinalSummary,
             selectedCanon: selectedCanon ?? undefined,
           },
           null,
@@ -84,7 +86,7 @@ export const handleSave = async ({
     }
 
     const json = (await response.json().catch(() => null)) as
-      | { setName?: string }
+      | { setName?: string; targetFolderId?: string | null }
       | null;
 
     // 2️⃣ Canonical Update: ping /api/update-issuerCanon with summaries
@@ -97,9 +99,9 @@ export const handleSave = async ({
             },
             body: JSON.stringify({
                 draftSummary: draftSummary.trim(),
-                finalSummary: finalSummary,
+                finalSummary: trimmedFinalSummary,
             }),
-            credentials: "include" 
+            credentials: "include"
         });
 
         if (!updateResponse.ok) {
@@ -114,14 +116,18 @@ export const handleSave = async ({
 
 
     // 🔔 let the UI know the final server-side setName (if provided)
-    if (onSuccess) {
-      onSuccess(json?.setName ?? "");
-    }
-    
+    onSuccess?.({
+      setName: json?.setName ?? "",
+      targetFolderId: json?.targetFolderId ?? null,
+    });
 
+    playSuccessChime();
+
+    return true;
   } catch (error) {
     console.error("Failed to save images:", error);
     onError?.("Unable to save captured images. Please try again.");
+    return false;
   } finally {
     setIsSaving(false);
   }
