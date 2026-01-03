@@ -78,7 +78,9 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
         )}
 
         {!isCameraSelected && (
-          <div className="w-full h-full min-h-0 rounded-lg overflow-hidden bg-black relative flex flex-col">
+          <div
+            className="w-full h-full min-h-0 rounded-lg overflow-hidden bg-black relative flex flex-col max-h-[82vh]"
+          >
             <div className="flex-1 min-h-0 flex items-center justify-center">
               {latestImage ? (
                 <img

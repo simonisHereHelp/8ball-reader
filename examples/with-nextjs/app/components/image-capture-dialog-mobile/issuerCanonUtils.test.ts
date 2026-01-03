@@ -28,15 +28,17 @@ test("fetchIssuerCanonList returns issuers from API payload", async () => {
 });
 
 test("applyCanonToSummary seeds empty summary with canon and draft", () => {
-  const draftSummary = "Draft text";
+  const draftSummary = "Existing heading\nBody text";
   const updated = applyCanonToSummary({
     canon: sampleCanon,
     currentSummary: "",
     draftSummary,
   });
 
-  assert.equal(updated.startsWith("單位: Mega Bank"), true);
-  assert.equal(updated.includes(draftSummary), true);
+  assert.equal(
+    updated,
+    "單位: Mega Bank\nExisting heading\nBody text",
+  );
 });
 
 test("applyCanonToSummary avoids duplicating existing canon", () => {
@@ -53,13 +55,13 @@ test("applyCanonToSummary avoids duplicating existing canon", () => {
 test("applyCanonToSummary prepends canon when missing", () => {
   const updated = applyCanonToSummary({
     canon: sampleCanon,
-    currentSummary: "Other summary line",
+    currentSummary: "Other summary line\nSecond line",
     draftSummary: "",
   });
 
   assert.equal(
     updated,
-    "單位: Mega Bank\nOther summary line",
+    "單位: Mega Bank\nOther summary line\nSecond line",
   );
 });
 
