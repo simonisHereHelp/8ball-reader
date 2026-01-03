@@ -35,12 +35,12 @@ test("applyCanonToSummary seeds empty summary with canon and draft", () => {
     draftSummary,
   });
 
-  assert.equal(updated.startsWith("Issuer: Mega Bank"), true);
+  assert.equal(updated.startsWith("單位: Mega Bank"), true);
   assert.equal(updated.includes(draftSummary), true);
 });
 
 test("applyCanonToSummary avoids duplicating existing canon", () => {
-  const existing = "Issuer: Mega Bank (aliases: Mega, MG)\nExisting text";
+  const existing = "單位: Mega Bank\nExisting text";
   const updated = applyCanonToSummary({
     canon: sampleCanon,
     currentSummary: existing,
@@ -59,6 +59,6 @@ test("applyCanonToSummary prepends canon when missing", () => {
 
   assert.equal(
     updated,
-    "Issuer: Mega Bank (aliases: Mega, MG)\nOther summary line",
+    "單位: Mega Bank\nOther summary line",
   );
 });

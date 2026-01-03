@@ -20,12 +20,12 @@ export const handleSummary = async ({
   images: Image[];
   setIsSaving: (isSaving: boolean) => void;
   // UPDATED: setSummary is now a function that takes the final summary string
-  setSummary: (summary: string) => void; 
+  setSummary: (summary: string) => void;
   setSummaryImageUrl: (url: string | null) => void;
   setShowSummaryOverlay: (show: boolean) => void;
   setError: (message: string) => void;
-}) => {
-  if (images.length === 0) return;
+}): Promise<boolean> => {
+  if (images.length === 0) return false;
 
   setIsSaving(true);
   setError("");
@@ -63,12 +63,14 @@ export const handleSummary = async ({
     setSummary(summaryText);
     setSummaryImageUrl(images[images.length - 1].url);
     setShowSummaryOverlay(true);
+    return true;
   } catch (error) {
     console.error("Failed to summarize image:", error);
     setSummary("");
     setSummaryImageUrl(null);
     setError("Unable to summarize the captured image. Please try again.");
     setShowSummaryOverlay(false);
+    return false;
   } finally {
     setIsSaving(false);
   }
