@@ -148,7 +148,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
                     <img
                       src={latestImage.url || "/placeholder.svg"}
                       alt="Latest"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain bg-black"
                     />
                     {images.length > 1 && (
                       <div className="absolute inset-0 bg-black/40 backdrop-blur-none flex items-center justify-center">

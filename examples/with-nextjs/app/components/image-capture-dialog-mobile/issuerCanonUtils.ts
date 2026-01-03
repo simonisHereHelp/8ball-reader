@@ -36,10 +36,7 @@ export const applyCanonToSummary = ({
   currentSummary: string;
   draftSummary: string;
 }): string => {
-  const aliasText = canon.aliases?.length
-    ? ` (aliases: ${canon.aliases.join(", ")})`
-    : "";
-  const canonLine = `Issuer: ${canon.master}${aliasText}`.trim();
+  const canonLine = `單位: ${canon.master}`;
   const trimmedCurrent = currentSummary.trim();
 
   if (!trimmedCurrent) {
