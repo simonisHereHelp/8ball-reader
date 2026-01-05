@@ -265,12 +265,14 @@ export const useImageCaptureState = (
       selectedCanon,
       setIsSaving,
       onError: setError,
-      onSuccess: ({ setName: savedSetName, targetFolderId }) => {
+      onSuccess: ({ setName: savedSetName, targetFolderId, topic }) => {
         setShowGallery(false); // Close gallery after success
-        const folderPath = targetFolderId ? `Drive_${targetFolderId}` : "Drive_unknown";
+        const lastSegment = targetFolderId?.split("/").pop() ?? "";
+        const folderPath = topic || lastSegment || "Drive_unknown";
+        const displayPath = folderPath.replace(/^Drive_/, "");
         const resolvedName = savedSetName || "(untitled)";
         setSaveMessage(
-          `uploaded to path: ${folderPath} ✅\nname: ${resolvedName} ✅`,
+          `uploaded to path: ${displayPath} ✅\nname: ${resolvedName} ✅`,
         );
         setImages([]); // Clear images after save
         setDraftSummary("");

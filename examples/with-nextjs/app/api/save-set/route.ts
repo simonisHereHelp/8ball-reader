@@ -14,66 +14,18 @@ interface SelectedCanonMeta {
   aliases?: string[];
 }
 
-function extractField(
-  lines: string[],
-  labels: string[],
-): string | null {
-  for (const rawLine of lines) {
-    const line = rawLine.trim();
-    const [label, ...rest] = line.split(/[：:]/u);
-    if (!label || !rest.length) continue;
-
-    const normalizedLabel = label.replace(/\s+/g, "").toLowerCase();
-    if (labels.some((candidate) => normalizedLabel === candidate)) {
-      return rest.join(":").trim();
-    }
-  }
-  return null;
-}
-
-function deriveTocFields(
-  summary: string,
-  selectedCanon: SelectedCanonMeta | null,
-) {
-  const lines = summary.split(/\r?\n/).filter((line) => line.trim().length > 0);
-
-  const issuer =
-    extractField(lines, ["單位", "issuer", "寄件單位", "機構"])
-      || selectedCanon?.master
-      || "其他單位";
-
-  const type =
-    extractField(lines, ["類型", "type", "分類"]) || "一般文件";
-
-  const action =
-    extractField(lines, ["行動", "action", "處置", "下一步"]) || "其他行動";
-
-  return { issuer, type, action };
-}
-
 function buildMarkdown(params: {
   setName: string;
-  issuer: string;
-  type: string;
-  action: string;
   summary: string;
   pageCount: number;
 }) {
-  const { setName, issuer, type, action, summary, pageCount } = params;
+  const { setName, summary, pageCount } = params;
   const images = Array.from({ length: Math.max(pageCount, 0) }).map((_, idx) => {
     const pageNumber = idx + 1;
     return `![${setName}-p${pageNumber}](./${setName}-p${pageNumber}.jpeg)`;
   });
 
   return `# ${setName}
-
-## TOC
-
-- **單位（Issuer）**：${issuer}
-- **類型（Type）**：${type}
-- **行動（Action）**：${action}
-
----
 
 ## summary
 
@@ -179,12 +131,8 @@ export async function POST(request: Request) {
     const { folderId: targetFolderId, topic } = await resolveDriveFolder(summary);
 
     const imageFiles = files;
-    const { issuer, type, action } = deriveTocFields(summary, selectedCanon);
     const markdown = buildMarkdown({
       setName,
-      issuer,
-      type,
-      action,
       summary,
       pageCount: imageFiles.length,
     });
