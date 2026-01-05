@@ -9,6 +9,36 @@ import {
 } from "@/lib/jsonCanonSources";
 import { resolveDriveFolder } from "@/lib/driveSubfolderResolver";
 
+interface SelectedCanonMeta {
+  master: string;
+  aliases?: string[];
+}
+
+function buildMarkdown(params: {
+  setName: string;
+  summary: string;
+  pageCount: number;
+}) {
+  const { setName, summary, pageCount } = params;
+  const images = Array.from({ length: Math.max(pageCount, 0) }).map((_, idx) => {
+    const pageNumber = idx + 1;
+    return `![${setName}-p${pageNumber}](./${setName}-p${pageNumber}.jpeg)`;
+  });
+
+  return `# ${setName}
+
+## summary
+
+${summary.trim()}
+
+---
+
+## support
+
+${images.join("\n\n")}
+`;
+}
+
 export const runtime = "nodejs";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -78,6 +108,16 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const summary = (formData.get("summary") as string | null)?.trim() ?? "";
+    const selectedCanonRaw = formData.get("selectedCanon");
+    let selectedCanon: SelectedCanonMeta | null = null;
+    if (typeof selectedCanonRaw === "string") {
+      try {
+        selectedCanon = (JSON.parse(selectedCanonRaw) as SelectedCanonMeta) ?? null;
+      } catch (err) {
+        console.warn("Unable to parse selectedCanon from request:", err);
+      }
+    }
+
     const files = formData.getAll("files").filter((file): file is File => file instanceof File);
 
     if (!summary || !files.length) {
@@ -90,17 +130,27 @@ export async function POST(request: Request) {
     // 儲存檔案到 Google Drive (auto-route into active subfolders)
     const { folderId: targetFolderId, topic } = await resolveDriveFolder(summary);
 
+    const imageFiles = files;
+    const markdown = buildMarkdown({
+      setName,
+      summary,
+      pageCount: imageFiles.length,
+    });
+
+    const summaryFile = new File([markdown], "summary.md", { type: "text/markdown" });
+    const uploadFiles = [...imageFiles, summaryFile];
+
     await driveSaveFiles({
       folderId: targetFolderId,
-      files,
+      files: uploadFiles,
       fileToUpload: async (file) => {
         const baseName = setName.replace(/[\\/:*?"<>|]/g, "_");
         const extension = file.name.split(".").pop();
-        const imageFiles = files.filter(f => f.name !== "summary.json");
-        
-        let fileName = file.name === "summary.json"
-          ? `${baseName}.json`
-          : `${baseName}-p${imageFiles.indexOf(file) + 1}.${extension ?? "dat"}`;
+
+        const fileName =
+          file === summaryFile || file.name === "summary.md"
+            ? `${baseName}.md`
+            : `${baseName}-p${imageFiles.indexOf(file) + 1}.${extension ?? "dat"}`;
 
         return {
           name: fileName,

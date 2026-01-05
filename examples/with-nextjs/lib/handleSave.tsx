@@ -31,7 +31,11 @@ export const handleSave = async ({
   selectedCanon?: SelectedCanonMeta | null;
   setIsSaving: (isSaving: boolean) => void;
   onError?: (message: string) => void;
-  onSuccess?: (meta: { setName: string; targetFolderId?: string | null }) => void;
+  onSuccess?: (meta: {
+    setName: string;
+    targetFolderId?: string | null;
+    topic?: string | null;
+  }) => void;
 }): Promise<boolean> => {
   // nothing to save
   if (!images.length) return false;
@@ -48,23 +52,7 @@ export const handleSave = async ({
     // 1. Send the edited summary as the 'summary' form field (used for setName derivation)
     formData.append("summary", trimmedFinalSummary);
 
-    // 2. summary.json file — server will rename it to setName.json
-    const summaryFile = new File(
-      [
-        JSON.stringify(
-          {
-            summary: trimmedFinalSummary,
-            selectedCanon: selectedCanon ?? undefined,
-          },
-          null,
-          2,
-        ),
-      ],
-      "summary.json",
-      { type: "application/json" },
-    );
-    formData.append("files", summaryFile);
-
+    // Include issuer canon metadata for markdown generation on the server
     if (selectedCanon) {
       formData.append("selectedCanon", JSON.stringify(selectedCanon));
     }
@@ -86,7 +74,7 @@ export const handleSave = async ({
     }
 
     const json = (await response.json().catch(() => null)) as
-      | { setName?: string; targetFolderId?: string | null }
+      | { setName?: string; targetFolderId?: string | null; topic?: string | null }
       | null;
 
     // 2️⃣ Canonical Update: ping /api/update-issuerCanon with summaries
@@ -119,6 +107,7 @@ export const handleSave = async ({
     onSuccess?.({
       setName: json?.setName ?? "",
       targetFolderId: json?.targetFolderId ?? null,
+      topic: json?.topic ?? null,
     });
 
     playSuccessChime();
