@@ -1,4 +1,5 @@
-import type { FacingMode } from "@shivantra/react-web-camera";
+import type React from "react"; // Required for React.RefObject
+import type { FacingMode, WebCameraHandler } from "@shivantra/react-web-camera";
 import type { IssuerCanonEntry } from "./issuerCanonUtils";
 
 export interface Image {
@@ -40,4 +41,10 @@ export interface Actions {
   setError: (message: string) => void;
   refreshCanons: () => Promise<void>;
   selectCanon: (canon: IssuerCanonEntry) => void;
+}
+
+export interface CameraViewProps {
+  state: State;
+  actions: Actions;
+  cameraRef: React.RefObject<WebCameraHandler>;
 }
