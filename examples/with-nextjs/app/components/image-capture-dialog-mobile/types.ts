@@ -18,6 +18,7 @@ export interface State {
   draftSummary: string;     // The original AI output
   editableSummary: string;  // What the user sees and edits
   summaryImageUrl: string | null;
+  showSummaryOverlay: boolean;
   error: string;
   saveMessage: string;
   issuerCanons: IssuerCanonEntry[];
@@ -46,5 +47,5 @@ export interface Actions {
 export interface CameraViewProps {
   state: State;
   actions: Actions;
-  cameraRef: React.RefObject<WebCameraHandler>;
+  cameraRef: React.RefObject<WebCameraHandler | null>;
 }
