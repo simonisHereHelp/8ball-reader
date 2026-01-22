@@ -99,16 +99,6 @@ function Content() {
           <div className="bg-white dark:bg-slate-800 h-full flex items-center justify-center rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 md:p-12">
             <div className="text-center">
               <div className="space-y-4">
-                {uploadConfirmation && (
-                  <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-left text-blue-900">
-                    <p className="text-sm font-semibold">
-                      upload to {uploadConfirmation.folder}
-                    </p>
-                    <p className="text-sm font-semibold">
-                      filename: {uploadConfirmation.filename}
-                    </p>
-                  </div>
-                )}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Button
                     onClick={() => handleOpen("camera")}
