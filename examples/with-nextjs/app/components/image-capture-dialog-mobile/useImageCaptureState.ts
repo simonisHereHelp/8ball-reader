@@ -264,6 +264,7 @@ export const useImageCaptureState = (
           "uploadConfirmation",
           JSON.stringify({ folder: displayPath, filename: resolvedName }),
         );
+        window.dispatchEvent(new Event("upload-confirmation"));
         setSaveMessage(`uploaded to: ${displayPath} ✅\nname: ${resolvedName} ✅`);
         setImages([]);
         setDraftSummary("");

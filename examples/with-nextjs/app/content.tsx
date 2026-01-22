@@ -41,18 +41,26 @@ function Content() {
   const handleClose = () => setDialogSource(null);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("uploadConfirmation");
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as { folder?: string; filename?: string };
-      if (parsed.folder && parsed.filename) {
-        setUploadConfirmation({ folder: parsed.folder, filename: parsed.filename });
+    const loadConfirmation = () => {
+      const raw = sessionStorage.getItem("uploadConfirmation");
+      if (!raw) return;
+      try {
+        const parsed = JSON.parse(raw) as { folder?: string; filename?: string };
+        if (parsed.folder && parsed.filename) {
+          setUploadConfirmation({ folder: parsed.folder, filename: parsed.filename });
+        }
+      } catch (error) {
+        console.warn("Unable to parse upload confirmation:", error);
+      } finally {
+        sessionStorage.removeItem("uploadConfirmation");
       }
-    } catch (error) {
-      console.warn("Unable to parse upload confirmation:", error);
-    } finally {
-      sessionStorage.removeItem("uploadConfirmation");
-    }
+    };
+
+    loadConfirmation();
+
+    const handleConfirmation = () => loadConfirmation();
+    window.addEventListener("upload-confirmation", handleConfirmation);
+    return () => window.removeEventListener("upload-confirmation", handleConfirmation);
   }, []);
 
   return (
