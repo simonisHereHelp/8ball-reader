@@ -37,9 +37,11 @@ export interface Actions {
   handleClose: () => void;
   setCaptureSource: (source: "camera" | "photos") => void;
   setEditableSummary: (summary: string) => void;
+  setDraftSummary: (summary: string) => void;
   setShowGallery: (show: boolean) => void;
   setCameraError: (error: boolean) => void;
   setError: (message: string) => void;
+  setCanonError: (message: string) => void;
   refreshCanons: () => Promise<void>;
   selectCanon: (canon: IssuerCanonEntry) => void;
 }
