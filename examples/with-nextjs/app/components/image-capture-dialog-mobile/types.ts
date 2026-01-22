@@ -7,6 +7,13 @@ export interface Image {
   file: File;
 }
 
+export interface SubfolderOption {
+  topic: string;
+  folderId?: string;
+  keywords?: string[];
+  description?: string;
+}
+
 export interface State {
   images: Image[];
   facingMode: FacingMode;
@@ -21,6 +28,10 @@ export interface State {
   showSummaryOverlay: boolean;
   error: string;
   saveMessage: string;
+  availableSubfolders: SubfolderOption[];
+  selectedSubfolder: SubfolderOption | null;
+  subfolderLoading: boolean;
+  subfolderError: string;
   issuerCanons: IssuerCanonEntry[];
   issuerCanonsLoading: boolean;
   canonError: string;
@@ -42,6 +53,8 @@ export interface Actions {
   setCameraError: (error: boolean) => void;
   setError: (message: string) => void;
   setCanonError: (message: string) => void;
+  refreshSubfolders: () => Promise<void>;
+  selectSubfolder: (subfolder: SubfolderOption) => void;
   refreshCanons: () => Promise<void>;
   selectCanon: (canon: IssuerCanonEntry) => void;
 }
