@@ -6,9 +6,7 @@ import { Camera } from "lucide-react";
 import { useSession, signIn, signOut } from "next-auth/react";
 
 import { Button } from "@/ui/components";
-import {
-  ImageCaptureDialogMobile,
-} from "@/app/components";
+import { ImageCaptureDialogMobile } from "@/app/components";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -26,42 +24,13 @@ function useIsMobile() {
 }
 
 function Content() {
-  const [dialogSource, setDialogSource] = useState<"camera" | "photos" | null>(
-    null,
-  );
-  const [uploadConfirmation, setUploadConfirmation] = useState<{
-    folder: string;
-    filename: string;
-  } | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const { data: session } = useSession();
 
-  const handleOpen = (source: "camera" | "photos") => setDialogSource(source);
-  const handleClose = () => setDialogSource(null);
-
-  useEffect(() => {
-    const loadConfirmation = () => {
-      const raw = sessionStorage.getItem("uploadConfirmation");
-      if (!raw) return;
-      try {
-        const parsed = JSON.parse(raw) as { folder?: string; filename?: string };
-        if (parsed.folder && parsed.filename) {
-          setUploadConfirmation({ folder: parsed.folder, filename: parsed.filename });
-        }
-      } catch (error) {
-        console.warn("Unable to parse upload confirmation:", error);
-      } finally {
-        sessionStorage.removeItem("uploadConfirmation");
-      }
-    };
-
-    loadConfirmation();
-
-    const handleConfirmation = () => loadConfirmation();
-    window.addEventListener("upload-confirmation", handleConfirmation);
-    return () => window.removeEventListener("upload-confirmation", handleConfirmation);
-  }, []);
+  const handleOpen = () => setIsDialogOpen(true);
+  const handleClose = () => setIsDialogOpen(false);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -71,9 +40,12 @@ function Content() {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full mb-6">
             <Camera className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
-          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-            文件狗 DocuSniff
+          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+            Xpanion Reader
           </h1>
+          <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+            makes reading enjoyable
+          </p>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
             Google Login(登錄): {session ? "✓" : "❌"}
           </p>
@@ -101,50 +73,25 @@ function Content() {
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Button
-                    onClick={() => handleOpen("camera")}
+                    onClick={handleOpen}
                     className="app-button h-12 !px-8 !py-3 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer"
                   >
                     <Camera className="w-5 h-5 mr-2" />
                     <span className="app-button-label">Launch Camera</span>
                   </Button>
-                  <Button
-                    onClick={() => handleOpen("photos")}
-                    className="app-button h-12 !px-8 !py-3 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
-                  >
-                    <span className="app-button-label">Photo Album</span>
-                  </Button>
                 </div>
-                {uploadConfirmation ? (
-                  <div className="text-sm text-slate-500 dark:text-slate-400 space-y-1">
-                    <p>upload to {uploadConfirmation.folder}</p>
-                    <p>filename: {uploadConfirmation.filename}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    {isMobile
-                      ? "Mobile-optimized interface"
-                      : "Desktop-enhanced experience"}
-                  </p>
-                )}
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {isMobile
+                    ? "Mobile-optimized interface"
+                    : "Desktop-enhanced experience"}
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {isMobile ? (
-        <ImageCaptureDialogMobile
-          open={dialogSource !== null}
-          onOpenChange={handleClose}
-          initialSource={dialogSource ?? "camera"}
-        />
-      ) : (
-        <ImageCaptureDialogMobile
-          open={dialogSource !== null}
-          onOpenChange={handleClose}
-          initialSource={dialogSource ?? "camera"}
-        />
-      )}
+      <ImageCaptureDialogMobile open={isDialogOpen} onOpenChange={handleClose} />
     </div>
   );
 }

@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import { Camera } from "lucide-react";
 import { Button } from "@/ui/components";
-import {
-  ImageCaptureDialogDesktop,
-  ImageCaptureDialogMobile,
-} from "@/app/components";
+import { ImageCaptureDialogMobile } from "@/app/components";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -47,15 +44,10 @@ function Content() {
             <Camera className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 mb-3">
-            React Web Camera
+            Xpanion Reader
           </h1>
           <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Default camera inputs only allow one photo, making multi-image
-            capture frustrating.&nbsp;
-            <strong>React web camera</strong> is a lightweight, headless React
-            component for capturing multiple images in one session. It’s
-            flexible, PWA-friendly, and gives you full control over UI and
-            styling.
+            makes reading enjoyable
           </p>
         </div>
 
@@ -93,11 +85,7 @@ function Content() {
         </div>
       </main>
 
-      {isMobile ? (
-        <ImageCaptureDialogMobile open={open} onOpenChange={handleClose} />
-      ) : (
-        <ImageCaptureDialogDesktop open={open} onOpenChange={handleClose} />
-      )}
+      <ImageCaptureDialogMobile open={open} onOpenChange={handleClose} />
     </div>
   );
 }
