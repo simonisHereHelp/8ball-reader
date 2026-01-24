@@ -43,3 +43,13 @@ Repurpose this project into a clean Next.js 14 uploader that captures images and
    - Provide a Vercel-ready checklist.
 3. **Verification**
    - Add minimal smoke tests for the upload API.
+
+## Two-Finger Point
+### Core Detection Concept: “Two-Finger Point”
+- Package name: `@simonisHereHelp/two-finger-point`.
+- Use MediaPipe Hands landmarks as input.
+- Detect a two-finger point when index and middle fingers are extended and ring/pinky are bent.
+- Return a boolean for whether the gesture is present (no confidence/threshold configuration).
+
+### API
+1. `isTwoFingerPoint(landmarks)` → returns `true | false` based on the current frame.
