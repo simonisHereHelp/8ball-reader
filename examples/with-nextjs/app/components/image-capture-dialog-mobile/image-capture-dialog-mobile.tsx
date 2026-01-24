@@ -10,18 +10,13 @@ import { GalleryView } from "./GalleryView";
 interface ImageCaptureDialogMobileProps {
   open: boolean;
   onOpenChange?: (open: boolean) => void;
-  initialSource?: "camera" | "photos";
 }
 
 export function ImageCaptureDialogMobile({
   open,
   onOpenChange,
-  initialSource = "camera",
-}: ImageCaptureDialogMobileProps) { // Apply the interface here
-  const { state, actions, cameraRef } = useImageCaptureState(
-    onOpenChange,
-    initialSource,
-  );
+}: ImageCaptureDialogMobileProps) {
+  const { state, actions, cameraRef } = useImageCaptureState(onOpenChange);
 
   const { showGallery } = state;
   const { handleClose } = actions;
