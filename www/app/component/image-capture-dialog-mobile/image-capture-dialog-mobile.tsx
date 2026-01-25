@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import WebCamera from "@shivantra/react-web-camera";
 import type { FacingMode, WebCameraHandler } from "@shivantra/react-web-camera";
 
-import { Button, Dialog, DialogContent, DialogTitle } from "@/ui/components";
+import { Button, Dialog, DialogContent, DialogTitle } from "@/app/component";
 
 interface Image {
   url: string;

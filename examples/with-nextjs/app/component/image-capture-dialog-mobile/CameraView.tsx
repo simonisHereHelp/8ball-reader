@@ -1,6 +1,6 @@
 import { Camera, CameraOff, RefreshCcw, X } from "lucide-react";
 import WebCamera from "@shivantra/react-web-camera";
-import { Button } from "@/ui/components";
+import { Button } from "@/app/component";
 import type { CameraViewProps } from "./types";
 
 export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
