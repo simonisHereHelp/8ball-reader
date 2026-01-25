@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from \"react\";
-import { Camera, CameraOff, RefreshCcw, X } from \"lucide-react\";
-import WebCamera from \"@shivantra/react-web-camera\";
-import { isTwoFingerPoint, type HandLandmarks } from \"@simonisHereHelp/two-finger-point\";
+import { useEffect, useMemo, useState } from "react";
+import { Camera, CameraOff, RefreshCcw, X } from "lucide-react";
+import WebCamera from "@shivantra/react-web-camera";
+import {
+  isTwoFingerPoint,
+  type HandLandmarks,
+} from "@simonisHereHelp/two-finger-point";
 import { Button } from "@/app/component";
 import type { CameraViewProps } from "./types";
 
@@ -23,9 +26,12 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
       setLandmarks(Array.isArray(nextLandmarks) ? nextLandmarks : null);
     };
 
-    window.addEventListener(\"two-finger-point\", handleLandmarks as EventListener);
+    window.addEventListener("two-finger-point", handleLandmarks as EventListener);
     return () => {
-      window.removeEventListener(\"two-finger-point\", handleLandmarks as EventListener);
+      window.removeEventListener(
+        "two-finger-point",
+        handleLandmarks as EventListener,
+      );
     };
   }, []);
 
