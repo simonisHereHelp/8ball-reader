@@ -1,10 +1,33 @@
-import { Camera, CameraOff, RefreshCcw, X } from "lucide-react";
-import WebCamera from "@shivantra/react-web-camera";
-import { Button } from "@/ui/components";
+\"use client\";
+
+import { useEffect, useMemo, useState } from \"react\";
+import { Camera, CameraOff, RefreshCcw, X } from \"lucide-react\";
+import WebCamera from \"@shivantra/react-web-camera\";
+import { isTwoFingerPoint, type HandLandmarks } from \"@simonisHereHelp/two-finger-point\";
+import { Button } from "@/app/component";
 import type { CameraViewProps } from "./types";
 
 export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   const latestImage = state.images[state.images.length - 1];
+  const [landmarks, setLandmarks] = useState<HandLandmarks | null>(null);
+  const isPointing = useMemo(
+    () => isTwoFingerPoint(landmarks),
+    [landmarks]
+  );
+
+  useEffect(() => {
+    const handleLandmarks = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      const nextLandmarks = detail?.landmarks ?? detail ?? null;
+
+      setLandmarks(Array.isArray(nextLandmarks) ? nextLandmarks : null);
+    };
+
+    window.addEventListener(\"two-finger-point\", handleLandmarks as EventListener);
+    return () => {
+      window.removeEventListener(\"two-finger-point\", handleLandmarks as EventListener);
+    };
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
@@ -26,6 +49,13 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
             captureMode="back"
             onError={() => actions.setCameraError(true)}
           />
+        )}
+
+        {!state.cameraError && (
+          <div className="absolute top-4 left-4 z-30 rounded-lg bg-black/60 px-3 py-2 text-xs font-medium text-white">
+            <p className="uppercase tracking-wide text-white/70">Live feed</p>
+            <p>Two-finger point: {String(isPointing)}</p>
+          </div>
         )}
 
         {/* Floating Capture UI */}

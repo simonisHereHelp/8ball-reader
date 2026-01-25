@@ -1,11 +1,15 @@
 "use client";
 
 import { Camera, CameraOff, RefreshCcw, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import WebCamera from "@shivantra/react-web-camera";
 import type { FacingMode, WebCameraHandler } from "@shivantra/react-web-camera";
+import {
+  isTwoFingerPoint,
+  type HandLandmarks,
+} from "@simonisHereHelp/two-finger-point";
 
-import { Button, Dialog, DialogContent, DialogTitle } from "@/ui/components";
+import { Button, Dialog, DialogContent, DialogTitle } from "@/app/component";
 
 interface Image {
   url: string;
@@ -23,6 +27,11 @@ export function ImageCaptureDialogMobile({
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [showGallery, setShowGallery] = useState(false);
   const [cameraError, setCameraError] = useState(false);
+  const [landmarks, setLandmarks] = useState<HandLandmarks | null>(null);
+  const isPointing = useMemo(
+    () => isTwoFingerPoint(landmarks),
+    [landmarks],
+  );
 
   const cameraRef = useRef<WebCameraHandler | null>(null);
 
@@ -82,13 +91,30 @@ export function ImageCaptureDialogMobile({
     }
   };
 
+  useEffect(() => {
+    const handleLandmarks = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      const nextLandmarks = detail?.landmarks ?? detail ?? null;
+
+      setLandmarks(Array.isArray(nextLandmarks) ? nextLandmarks : null);
+    };
+
+    window.addEventListener("two-finger-point", handleLandmarks as EventListener);
+    return () => {
+      window.removeEventListener(
+        "two-finger-point",
+        handleLandmarks as EventListener,
+      );
+    };
+  }, []);
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogTitle />
-      <DialogContent className="p-0 border-0 bg-black max-w-none w-full h-full max-h-none sm:max-w-sm sm:w-[380px] sm:h-[680px] sm:rounded-[2rem] overflow-hidden [&>button:last-child]:hidden">
-        <div className="relative w-full h-full flex flex-col bg-black sm:rounded-[2rem]">
-          {/* Camera View */}
-          <div className="flex-1 relative p-0.5">
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogTitle />
+        <DialogContent className="p-0 border-0 bg-black max-w-none w-full h-full max-h-none sm:max-w-sm sm:w-[380px] sm:h-[680px] sm:rounded-[2rem] overflow-hidden [&>button:last-child]:hidden">
+          <div className="relative w-full h-full flex flex-col bg-black sm:rounded-[2rem]">
+            {/* Camera View */}
+            <div className="flex-1 relative p-0.5">
             {cameraError ? (
               <div className="flex flex-col items-center justify-center w-full h-full text-white/50">
                 <CameraOff className="w-12 h-12 mb-4" />
@@ -96,21 +122,29 @@ export function ImageCaptureDialogMobile({
                 <p className="text-sm">Please check your camera settings.</p>
               </div>
             ) : (
-              <WebCamera
-                ref={cameraRef}
-                className="w-full h-full object-cover"
-                style={{ backgroundColor: "black" }}
-                videoClassName="rounded-lg"
-                videoStyle={{ objectFit: "cover" }}
-                captureMode="back"
-                captureType="jpeg"
-                captureQuality={0.8}
-                getFileName={() => `capture-${Date.now()}.jpeg`}
-                onError={(err) => {
-                  console.error("Camera error:", err);
-                  setCameraError(true);
-                }}
-              />
+              <>
+                <WebCamera
+                  ref={cameraRef}
+                  className="w-full h-full object-cover"
+                  style={{ backgroundColor: "black" }}
+                  videoClassName="rounded-lg"
+                  videoStyle={{ objectFit: "cover" }}
+                  captureMode="back"
+                  captureType="jpeg"
+                  captureQuality={0.8}
+                  getFileName={() => `capture-${Date.now()}.jpeg`}
+                  onError={(err) => {
+                    console.error("Camera error:", err);
+                    setCameraError(true);
+                  }}
+                />
+                <div className="absolute top-4 left-4 z-30 rounded-lg bg-black/60 px-3 py-2 text-xs font-medium text-white">
+                  <p className="uppercase tracking-wide text-white/70">
+                    Live feed
+                  </p>
+                  <p>Two-finger point: {String(isPointing)}</p>
+                </div>
+              </>
             )}
 
             <div className="absolute bottom-8 left-0 right-0 px-8">
