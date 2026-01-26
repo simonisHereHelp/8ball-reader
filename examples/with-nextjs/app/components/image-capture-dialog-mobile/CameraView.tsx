@@ -1,14 +1,72 @@
 import { Camera, CameraOff, RefreshCcw, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import WebCamera from "@shivantra/react-web-camera";
 import { Button } from "@/ui/components";
 import type { CameraViewProps } from "./types";
+import { useDoubleTapTracker } from "../2tap-event-tracker";
+
+interface BatteryManager extends EventTarget {
+  level: number;
+  charging: boolean;
+  addEventListener(
+    type: "levelchange",
+    listener: (this: BatteryManager, ev: Event) => unknown,
+  ): void;
+  removeEventListener(
+    type: "levelchange",
+    listener: (this: BatteryManager, ev: Event) => unknown,
+  ): void;
+}
 
 export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   const latestImage = state.images[state.images.length - 1];
+  const cameraContainerRef = useRef<HTMLDivElement>(null);
+  const isDoubleTap = useDoubleTapTracker(cameraContainerRef);
+  const [batteryDelta, setBatteryDelta] = useState<number | null>(null);
+
+  useEffect(() => {
+    let battery: BatteryManager | null = null;
+    let initialLevel: number | null = null;
+
+    const updateDelta = () => {
+      if (battery && initialLevel !== null) {
+        const delta = Math.round((initialLevel - battery.level) * 100);
+        setBatteryDelta(delta);
+      }
+    };
+
+    const initBattery = async () => {
+      if (typeof navigator !== "undefined" && "getBattery" in navigator) {
+        try {
+          battery = await (navigator as Navigator & {
+            getBattery: () => Promise<BatteryManager>;
+          }).getBattery();
+          if (battery) {
+            initialLevel = battery.level;
+            updateDelta();
+            battery.addEventListener("levelchange", updateDelta);
+          }
+        } catch (err) {
+          console.warn("Battery API access denied", err);
+        }
+      }
+    };
+
+    initBattery();
+
+    return () => {
+      if (battery) {
+        battery.removeEventListener("levelchange", updateDelta);
+      }
+    };
+  }, []);
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 relative p-0.5 min-h-0 flex flex-col">
+      <div
+        ref={cameraContainerRef}
+        className="flex-1 relative p-0.5 min-h-0 flex flex-col"
+      >
         {/* Error Overlay */}
         {state.cameraError && (
           <div className="flex flex-col items-center justify-center w-full h-full text-white/50 bg-black">
@@ -28,6 +86,19 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           />
         )}
 
+        {!state.cameraError && (
+          <>
+            <div className="absolute left-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+              {isDoubleTap ? "LIVE STREAM..tap x 2" : "LIVE STREAM listening..."}
+            </div>
+            <div className="absolute right-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+              {batteryDelta === null
+                ? "delta battery: n/a"
+                : `delta battery: -${batteryDelta}%`}
+            </div>
+          </>
+        )}
+
         {/* Floating Capture UI */}
         {!state.cameraError && (
           <div className="absolute bottom-8 w-full px-8 flex items-center justify-between z-20">
@@ -35,7 +106,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
                onClick={() => actions.setShowGallery(true)}
                className="app-button w-16 h-16 rounded-xl border-2 border-white/30 overflow-hidden"
              >
-                {latestImage ? <img src={latestImage.url} className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
+                {latestImage ? <img src={latestImage.url} alt="Latest" className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
              </button>
              
              <Button onClick={actions.handleCapture} disabled={state.cameraError} className="app-button w-20 h-20 rounded-full border-4 border-white/50">
