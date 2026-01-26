@@ -17,9 +17,6 @@ const INDEX_PIP = 6;
 const MIDDLE_TIP = 12;
 const MIDDLE_PIP = 10;
 const RING_TIP = 16;
-const RING_PIP = 14;
-const PINKY_TIP = 20;
-const PINKY_PIP = 18;
 
 const isFingerExtended = (
   landmarks: HandLandmark[],
@@ -27,15 +24,26 @@ const isFingerExtended = (
   pipIndex: number,
 ) => landmarks[tipIndex]?.y < landmarks[pipIndex]?.y;
 
+const distance2D = (a: HandLandmark, b: HandLandmark) => {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+const areFingertipsClose = (landmarks: HandLandmark[]) => {
+  const indexTip = landmarks[INDEX_TIP];
+  const middleTip = landmarks[MIDDLE_TIP];
+  if (!indexTip || !middleTip) return false;
+  return distance2D(indexTip, middleTip) < 0.04;
+};
+
 const isTwoFingerPoint = (landmarks: HandLandmark[] | undefined) => {
   if (!landmarks) return false;
 
-  const indexExtended = isFingerExtended(landmarks, INDEX_TIP, INDEX_PIP);
-  const middleExtended = isFingerExtended(landmarks, MIDDLE_TIP, MIDDLE_PIP);
-  const ringExtended = isFingerExtended(landmarks, RING_TIP, RING_PIP);
-  const pinkyExtended = isFingerExtended(landmarks, PINKY_TIP, PINKY_PIP);
+  const fingertipsTogether = areFingertipsClose(landmarks);
+  const ringTip = landmarks[RING_TIP];
 
-  return indexExtended && middleExtended && !ringExtended && !pinkyExtended;
+  return fingertipsTogether && !ringTip;
 };
 
 let handsScriptPromise: Promise<HandsConstructor> | null = null;
