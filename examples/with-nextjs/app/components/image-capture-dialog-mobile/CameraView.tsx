@@ -1,65 +1,27 @@
 import { Camera, CameraOff, RefreshCcw, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import WebCamera from "@shivantra/react-web-camera";
 import { Button } from "@/ui/components";
 import type { CameraViewProps } from "./types";
 import { useDoubleTapTracker } from "../2tap-event-tracker";
 
-interface BatteryManager extends EventTarget {
-  level: number;
-  charging: boolean;
-  addEventListener(
-    type: "levelchange",
-    listener: (this: BatteryManager, ev: Event) => unknown,
-  ): void;
-  removeEventListener(
-    type: "levelchange",
-    listener: (this: BatteryManager, ev: Event) => unknown,
-  ): void;
-}
+const MODE_TOGGLE_OPTIONS = [
+  "voice read the page",
+  "pick 3 key words",
+  "pick 5 key words",
+  "summarize this page",
+] as const;
 
 export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   const latestImage = state.images[state.images.length - 1];
   const cameraContainerRef = useRef<HTMLDivElement>(null);
   const isDoubleTap = useDoubleTapTracker(cameraContainerRef);
-  const [batteryDelta, setBatteryDelta] = useState<number | null>(null);
+  const [modeIndex, setModeIndex] = useState(0);
+  const currentMode = MODE_TOGGLE_OPTIONS[modeIndex];
 
-  useEffect(() => {
-    let battery: BatteryManager | null = null;
-    let initialLevel: number | null = null;
-
-    const updateDelta = () => {
-      if (battery && initialLevel !== null) {
-        const delta = Math.round((initialLevel - battery.level) * 100);
-        setBatteryDelta(delta);
-      }
-    };
-
-    const initBattery = async () => {
-      if (typeof navigator !== "undefined" && "getBattery" in navigator) {
-        try {
-          battery = await (navigator as Navigator & {
-            getBattery: () => Promise<BatteryManager>;
-          }).getBattery();
-          if (battery) {
-            initialLevel = battery.level;
-            updateDelta();
-            battery.addEventListener("levelchange", updateDelta);
-          }
-        } catch (err) {
-          console.warn("Battery API access denied", err);
-        }
-      }
-    };
-
-    initBattery();
-
-    return () => {
-      if (battery) {
-        battery.removeEventListener("levelchange", updateDelta);
-      }
-    };
-  }, []);
+  const handleModeToggle = () => {
+    setModeIndex((prev) => (prev + 1) % MODE_TOGGLE_OPTIONS.length);
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -91,11 +53,13 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
             <div className="absolute left-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
               {isDoubleTap ? "LIVE STREAM..tap x 2" : "LIVE STREAM listening..."}
             </div>
-            <div className="absolute right-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-              {batteryDelta === null
-                ? "delta battery: n/a"
-                : `delta battery: -${batteryDelta}%`}
-            </div>
+            <button
+              type="button"
+              onClick={handleModeToggle}
+              className="absolute right-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white"
+            >
+              {currentMode}
+            </button>
           </>
         )}
 
