@@ -28,6 +28,12 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           />
         )}
 
+        {!state.cameraError && (
+          <div className="absolute left-3 top-3 z-10 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
+            live stream...
+          </div>
+        )}
+
         {/* Floating Capture UI */}
         {!state.cameraError && (
           <div className="absolute bottom-8 w-full px-8 flex items-center justify-between z-20">
