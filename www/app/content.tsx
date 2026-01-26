@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Camera } from "lucide-react";
-import { Button } from "@/ui/components";
-import { ImageCaptureDialogMobile } from "@/app/components";
+import { Button, ImageCaptureDialogMobile } from "@/app/component";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);

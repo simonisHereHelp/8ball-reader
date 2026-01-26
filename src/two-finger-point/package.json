@@ -1,0 +1,13 @@
+{
+  "name": "@simonisHereHelp/two-finger-point",
+  "version": "0.1.0",
+  "description": "Detect two-finger pointing gestures from hand landmarks",
+  "license": "MIT",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ]
+}

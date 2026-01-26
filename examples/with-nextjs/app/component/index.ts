@@ -1,3 +1,4 @@
+export { ImageCaptureDialogMobile } from "./image-capture-dialog-mobile";
 export { Button, buttonVariants } from "./button";
 export {
   Dialog,

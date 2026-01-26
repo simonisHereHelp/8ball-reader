@@ -1,7 +1,7 @@
 // app/components/image-capture-dialog-mobile/ImageCaptureDialogMobile.tsx
 "use client";
 
-import { Dialog, DialogContent, DialogTitle } from "@/ui/components"; 
+import { Dialog, DialogContent, DialogTitle } from "@/app/component";
 import { useImageCaptureState } from "./useImageCaptureState";
 import { CameraView } from "./CameraView";
 import { GalleryView } from "./GalleryView";
