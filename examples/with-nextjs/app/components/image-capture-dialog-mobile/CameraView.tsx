@@ -1,12 +1,16 @@
 import { Camera, CameraOff, RefreshCcw, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import WebCamera from "@shivantra/react-web-camera";
 import { Button } from "@/ui/components";
 import type { CameraViewProps } from "./types";
 import { useDoubleTapTracker } from "../2tap-event-tracker";
+import {
+  getReaderPrompt,
+  getReaderResponse,
+  savePromptsToDrive,
+} from "@/app/lib/gptRouter";
 
 const MODE_TOGGLE_OPTIONS = [
-  "voice read the page",
   "pick 3 key words",
   "pick 5 key words",
   "summarize this page",
@@ -22,6 +26,32 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   const handleModeToggle = () => {
     setModeIndex((prev) => (prev + 1) % MODE_TOGGLE_OPTIONS.length);
   };
+
+  useEffect(() => {
+    savePromptsToDrive();
+  }, []);
+
+  useEffect(() => {
+    if (!isDoubleTap) return;
+
+    let active = true;
+
+    const runReader = async () => {
+      actions.setReaderResponse("Generating response...");
+      actions.setShowGallery(true);
+      const prompt = getReaderPrompt(currentMode);
+      const response = await getReaderResponse(prompt);
+      if (active) {
+        actions.setReaderResponse(response);
+      }
+    };
+
+    runReader();
+
+    return () => {
+      active = false;
+    };
+  }, [actions, currentMode, isDoubleTap]);
 
   return (
     <div className="flex h-full flex-col">
