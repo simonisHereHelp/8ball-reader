@@ -19,24 +19,27 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
       return;
     }
 
-    let rafId = 0;
+    const container = cameraContainerRef.current;
+    if (!container) return;
+
     const findVideo = () => {
-      const video = cameraContainerRef.current?.querySelector("video");
+      const video = container.querySelector("video");
       if (video) {
         setVideoElement(video);
-        return;
       }
-      rafId = window.requestAnimationFrame(findVideo);
     };
 
     findVideo();
 
+    if (videoElement) return;
+
+    const observer = new MutationObserver(findVideo);
+    observer.observe(container, { childList: true, subtree: true });
+
     return () => {
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-      }
+      observer.disconnect();
     };
-  }, [state.cameraError]);
+  }, [state.cameraError, videoElement]);
 
   return (
     <div className="flex h-full flex-col">
