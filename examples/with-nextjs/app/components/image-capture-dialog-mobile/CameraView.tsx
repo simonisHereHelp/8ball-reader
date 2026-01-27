@@ -4,11 +4,7 @@ import WebCamera from "@shivantra/react-web-camera";
 import { Button } from "@/ui/components";
 import type { CameraViewProps } from "./types";
 import { useDoubleTapTracker } from "../2tap-event-tracker";
-import {
-  getReaderPrompt,
-  getReaderResponse,
-  savePromptsToDrive,
-} from "@/app/lib/gptRouter";
+import { getReaderResponse } from "@/app/lib/readerClient";
 
 const MODE_TOGGLE_OPTIONS = [
   "pick 3 key words",
@@ -28,18 +24,13 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   };
 
   useEffect(() => {
-    savePromptsToDrive();
-  }, []);
-
-  useEffect(() => {
     if (!isDoubleTap) return;
 
     let active = true;
 
     const runReader = async () => {
       actions.setReaderResponse("Generating response...");
-      const prompt = getReaderPrompt(currentMode);
-      const response = await getReaderResponse(prompt);
+      const response = await getReaderResponse(currentMode);
       if (active) {
         actions.setReaderResponse(response);
       }

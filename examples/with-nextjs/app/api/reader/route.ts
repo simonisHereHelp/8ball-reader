@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-
-type ReaderPrompt = {
-  system: string;
-  user: string;
-};
+import { PROMPTS_MODE_READER_SOURCE } from "@/lib/jsonCanonSources";
+import { GPT_Router } from "@/lib/gptRouter";
 
 type ReaderRequest = {
-  prompt: ReaderPrompt;
+  mode: string;
 };
 
 export async function POST(request: Request) {
@@ -20,17 +17,30 @@ export async function POST(request: Request) {
   }
 
   const traceId = crypto.randomUUID();
-  const { prompt } = (await request.json()) as ReaderRequest;
+  const { mode } = (await request.json()) as ReaderRequest;
   const apiKey = process.env.OPENAI_API_KEY;
+  const promptsSource = PROMPTS_MODE_READER_SOURCE;
+
+  console.info("[reader]", traceId, "mode", mode, "source", promptsSource);
 
   if (!apiKey) {
     console.warn("[reader]", traceId, "missing OPENAI_API_KEY");
     return NextResponse.json({
-      response: `Prompt received.\n\nSystem: ${prompt.system}\nUser: ${prompt.user}\n\nAdd OPENAI_API_KEY to enable live responses.`,
+      response: "Add OPENAI_API_KEY to enable live responses.",
     });
   }
 
   try {
+    const prompts = await GPT_Router.getPromptsMap(promptsSource);
+    const promptConfig = prompts?.[mode];
+    if (!promptConfig) {
+      console.error("[reader]", traceId, "missing prompt config for mode", mode);
+      return NextResponse.json(
+        { response: "Unable to generate a response right now." },
+        { status: 400 },
+      );
+    }
+
     const result = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -40,8 +50,8 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         messages: [
-          { role: "system", content: prompt.system },
-          { role: "user", content: prompt.user },
+          { role: "system", content: promptConfig.system },
+          { role: "user", content: promptConfig.user },
         ],
         temperature: 0.2,
       }),
