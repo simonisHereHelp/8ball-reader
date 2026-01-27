@@ -1,6 +1,6 @@
 "use client";
 
-import prompts from "./prompts_mode_reader.json";
+import prompts from "@/lib/prompts_mode_reader.json";
 
 type ReaderMode = keyof typeof prompts;
 

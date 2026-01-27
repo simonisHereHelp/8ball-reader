@@ -1,72 +1,35 @@
 import { NextResponse } from "next/server";
-import { createSign } from "crypto";
+import { auth } from "@/auth";
+import { PROMPTS_MODE_READER_SOURCE } from "@/lib/jsonCanonSources";
 
 type PromptsPayload = {
   prompts: Record<string, { system: string; user: string }>;
 };
 
-const toBase64Url = (input: Buffer | string) =>
-  Buffer.from(input)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-
-const getAccessToken = async () => {
-  const clientEmail = process.env.GOOGLE_DRIVE_CLIENT_EMAIL;
-  const privateKey = process.env.GOOGLE_DRIVE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-
-  if (!clientEmail || !privateKey) {
-    return null;
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const header = toBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const claim = toBase64Url(
-    JSON.stringify({
-      iss: clientEmail,
-      scope: "https://www.googleapis.com/auth/drive.file",
-      aud: "https://oauth2.googleapis.com/token",
-      exp: now + 3600,
-      iat: now,
-    }),
-  );
-
-  const signature = createSign("RSA-SHA256")
-    .update(`${header}.${claim}`)
-    .sign(privateKey);
-
-  const assertion = `${header}.${claim}.${toBase64Url(signature)}`;
-
-  const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion,
-    }),
-  });
-
-  if (!tokenResponse.ok) {
-    return null;
-  }
-
-  const tokenData = (await tokenResponse.json()) as { access_token?: string };
-  return tokenData.access_token ?? null;
-};
-
 export async function POST(request: Request) {
+  const session = await auth();
+  const accessToken = (session as { accessToken?: string } | null)?.accessToken;
   const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-  const promptsPath = process.env.PROMPTS_MODE_READER_PATH;
-  const accessToken = await getAccessToken();
+  const promptsSource = PROMPTS_MODE_READER_SOURCE;
+  const promptsLinkId =
+    promptsSource && (promptsSource.startsWith("/") || promptsSource.endsWith(".json"))
+      ? null
+      : promptsSource;
 
-  if (!folderId || !accessToken) {
+  if (!accessToken) {
+    return NextResponse.json(
+      { link: null, error: "Authentication required." },
+      { status: 401 },
+    );
+  }
+
+  if (!folderId) {
     return NextResponse.json(
       {
-        link: promptsPath
-          ? `https://drive.google.com/file/d/${promptsPath}/view?usp=drive_link`
+        link: promptsLinkId
+          ? `https://drive.google.com/file/d/${promptsLinkId}/view?usp=drive_link`
           : null,
-        error: "Drive credentials not configured.",
+        error: "Drive folder not configured.",
       },
       { status: 501 },
     );
@@ -134,7 +97,7 @@ export async function POST(request: Request) {
     },
   );
 
-  const linkId = promptsPath ?? fileId;
+  const linkId = promptsLinkId || fileId;
   return NextResponse.json({
     link: `https://drive.google.com/file/d/${linkId}/view?usp=drive_link`,
   });

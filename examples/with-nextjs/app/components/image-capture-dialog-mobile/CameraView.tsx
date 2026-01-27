@@ -38,7 +38,6 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
 
     const runReader = async () => {
       actions.setReaderResponse("Generating response...");
-      actions.setShowGallery(true);
       const prompt = getReaderPrompt(currentMode);
       const response = await getReaderResponse(prompt);
       if (active) {
@@ -91,6 +90,14 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
               {currentMode}
             </button>
           </>
+        )}
+
+        {!state.cameraError && state.readerResponse && (
+          <div className="absolute inset-0 z-30 flex flex-col bg-gray-900/50 p-4">
+            <div className="flex-1 overflow-y-auto rounded-lg bg-black/40 p-4 text-sm text-white">
+              <p className="whitespace-pre-wrap">{state.readerResponse}</p>
+            </div>
+          </div>
         )}
 
         {/* Floating Capture UI */}

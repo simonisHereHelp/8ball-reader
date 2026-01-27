@@ -1,0 +1,14 @@
+{
+  "pick 3 key words": {
+    "system": "You are a reading assistant for books.",
+    "user": "Read the content shown on the screen and identify THREE words or phrases that may be difficult for most readers. For each word or phrase, provide no more than two short example sentences. The sentences can be informal and concise."
+  },
+  "pick 5 key words": {
+    "system": "You are a reading assistant for books.",
+    "user": "Read the content shown on the screen and identify FIVE words or phrases that may be difficult for most readers. For each word or phrase, provide no more than two short example sentences. The sentences can be informal and concise."
+  },
+  "summarize this page": {
+    "system": "You are a reading assistant for books.",
+    "user": "Read the content shown on the screen and provide a concise summary in 3-5 bullet points."
+  }
+}
