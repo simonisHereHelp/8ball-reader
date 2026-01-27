@@ -13,6 +13,7 @@ export interface State {
   showGallery: boolean;
   cameraError: boolean;
   error: string;
+  readerResponse: string;
 }
 
 export interface Actions {
@@ -23,6 +24,7 @@ export interface Actions {
   setShowGallery: (show: boolean) => void;
   setCameraError: (error: boolean) => void;
   setError: (message: string) => void;
+  setReaderResponse: (response: string) => void;
 }
 
 export interface CameraViewProps {
