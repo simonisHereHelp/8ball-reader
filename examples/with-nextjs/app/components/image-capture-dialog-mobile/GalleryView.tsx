@@ -15,6 +15,17 @@ export function GalleryView({ state, actions }: { state: State; actions: Actions
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {state.readerResponse && (
+          <div className="rounded-lg border border-white/10 bg-white/5 p-4 text-sm text-white/80">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/60">
+              Reader Response
+            </p>
+            <p className="mt-2 whitespace-pre-wrap text-white">
+              {state.readerResponse}
+            </p>
+          </div>
+        )}
+
         {/* Responsive Image Grid */}
         <div className="grid grid-cols-2 gap-2">
           {state.images.map((img, i) => (
