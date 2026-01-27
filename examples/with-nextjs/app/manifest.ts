@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Xpanion Reader",
-    short_name: "Xpanion",
+    short_name: "Xpanion Reader",
     description: "Mobile-first camera reader experience.",
     start_url: "/",
     display: "standalone",
@@ -11,14 +11,15 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#0f172a",
     icons: [
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/icon",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
       },
       {
-        src: "/apple-icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/apple-icon",
+        sizes: "180x180",
+        type: "image/png",
       },
     ],
   };
