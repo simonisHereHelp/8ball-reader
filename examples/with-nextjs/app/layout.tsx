@@ -3,9 +3,9 @@ import { SessionProvider } from "next-auth/react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Xpanion Reader",
-  description: "Mobile-first camera reader experience.",
-  applicationName: "Xpanion Reader",
+  title: "X-Reader",
+  description: "Smart Cam with GPT.",
+  applicationName: "X Reader",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icon.png",

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Xpanion Reader",
-    short_name: "Xpanion Reader",
+    name: "X Reader",
+    short_name: "X Reader",
     description: "Mobile-first camera reader experience.",
     start_url: "/",
     display: "standalone",
