@@ -8,7 +8,6 @@ export const getReaderResponse = async (mode: string) => {
   });
 
   if (!response.ok) {
-    const traceId = response.headers.get("x-trace-id");
     let detail = "";
     try {
       const data = (await response.json()) as { response?: string };
@@ -16,8 +15,14 @@ export const getReaderResponse = async (mode: string) => {
     } catch {
       detail = await response.text();
     }
-    const suffix = traceId ? ` (trace ${traceId})` : "";
-    return `Unable to generate a response right now.${suffix}${detail ? ` ${detail}` : ""}`;
+    const lines = [
+      "Unable to generate a response right now.",
+      `Status: ${response.status}`,
+    ];
+    if (detail) {
+      lines.push(`Detail: ${detail}`);
+    }
+    return lines.join("\n");
   }
 
   const data = (await response.json()) as { response?: string };
