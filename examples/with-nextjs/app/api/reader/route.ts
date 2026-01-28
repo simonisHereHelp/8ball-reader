@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     if (!promptConfig) {
       return NextResponse.json(
         { response: "Unable to generate a response right now." },
-        { status: 400 },
+        { status: 400, headers: { "x-trace-id": traceId } },
       );
     }
 
