@@ -15,6 +15,7 @@ export async function POST(request: Request) {
   try {
     const prompts = await GPT_Router.getPromptsMap(promptsSource);
     const promptConfig = prompts?.[mode];
+    console.info("[reader] prompt config", promptConfig);
     if (!promptConfig) {
       console.error("[reader] missing prompt config for mode", mode);
       return NextResponse.json(
@@ -22,6 +23,9 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+
+    const apiKey = process.env.OPENAI_API_KEY ?? "";
+    console.info("[reader] apiKey present", Boolean(apiKey));
 
     const result = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -38,6 +42,7 @@ export async function POST(request: Request) {
         temperature: 0.2,
       }),
     });
+    console.info("[reader] openai response status", result.status);
 
     if (!result.ok) {
       const errorBody = await result.text();

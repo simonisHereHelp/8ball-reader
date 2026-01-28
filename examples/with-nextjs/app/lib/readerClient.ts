@@ -1,6 +1,12 @@
 "use client";
 
 export const getReaderResponse = async (mode: string) => {
+  const now = new Date();
+  const startTime = `${now.getHours().toString().padStart(2, "0")}:${now
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
+  const startLine = `now starting readerClient ${startTime}`;
   const response = await fetch("/api/reader", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -15,13 +21,8 @@ export const getReaderResponse = async (mode: string) => {
     } catch {
       detail = await response.text();
     }
-    const now = new Date();
-    const startTime = `${now.getHours().toString().padStart(2, "0")}:${now
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
     const lines = [
-      `now starting readerClient ${startTime}`,
+      startLine,
       "Unable to generate a response right now.",
       `Status: ${response.status}`,
     ];
@@ -32,5 +33,5 @@ export const getReaderResponse = async (mode: string) => {
   }
 
   const data = (await response.json()) as { response?: string };
-  return data.response ?? "No response received.";
+  return [startLine, data.response ?? "No response received."].join("\n");
 };
