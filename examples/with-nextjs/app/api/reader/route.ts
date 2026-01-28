@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { PROMPTS_MODE_READER_SOURCE } from "@/lib/jsonCanonSources";
 import { GPT_Router } from "@/lib/gptRouter";
 
@@ -8,27 +7,10 @@ type ReaderRequest = {
 };
 
 export async function POST(request: Request) {
-  const session = await auth();
-  if (!session) {
-    console.warn("[reader] missing session");
-    return NextResponse.json(
-      { response: "Authentication required." },
-      { status: 401 },
-    );
-  }
-
   const { mode } = (await request.json()) as ReaderRequest;
-  const apiKey = process.env.OPENAI_API_KEY;
   const promptsSource = PROMPTS_MODE_READER_SOURCE;
 
   console.info("[reader] mode", mode, "source", promptsSource);
-
-  if (!apiKey) {
-    console.warn("[reader] missing OPENAI_API_KEY");
-    return NextResponse.json(
-      { response: "Add OPENAI_API_KEY to enable live responses." },
-    );
-  }
 
   try {
     const prompts = await GPT_Router.getPromptsMap(promptsSource);
@@ -45,7 +27,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY ?? ""}`,
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
