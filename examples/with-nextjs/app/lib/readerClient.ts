@@ -1,6 +1,12 @@
 "use client";
 
 export const getReaderResponse = async (mode: string) => {
+  const now = new Date();
+  const startTime = `${now.getHours().toString().padStart(2, "0")}:${now
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
+  const startLine = `now starting readerClient ${startTime}`;
   const response = await fetch("/api/reader", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -8,18 +14,28 @@ export const getReaderResponse = async (mode: string) => {
   });
 
   if (!response.ok) {
-    const traceId = response.headers.get("x-trace-id");
     let detail = "";
     try {
-      const data = (await response.json()) as { response?: string };
-      detail = data.response ?? "";
+      const data = (await response.json()) as Record<string, unknown>;
+      detail = JSON.stringify(data);
     } catch {
       detail = await response.text();
     }
-    const suffix = traceId ? ` (trace ${traceId})` : "";
-    return `Unable to generate a response right now.${suffix}${detail ? ` ${detail}` : ""}`;
+    const lines = [
+      startLine,
+      "Unable to generate a response right now.",
+      `Status: ${response.status}`,
+    ];
+    if (detail) {
+      lines.push(`Detail: ${detail}`);
+    }
+    return lines.join("\n");
   }
 
-  const data = (await response.json()) as { response?: string };
-  return data.response ?? "No response received.";
+  const data = (await response.json()) as { response?: unknown };
+  const responseText =
+    typeof data.response === "string" && data.response.length > 0
+      ? data.response
+      : JSON.stringify(data);
+  return [startLine, responseText || "No response received."].join("\n");
 };
