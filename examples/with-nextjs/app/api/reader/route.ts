@@ -8,15 +8,19 @@ type ReaderRequest = {
 };
 
 export async function POST(request: Request) {
+  const traceId = crypto.randomUUID();
+  const respond = (body: Record<string, string>, status = 200) =>
+    NextResponse.json(body, {
+      status,
+      headers: { "x-trace-id": traceId },
+    });
+
   const session = await auth();
   if (!session) {
-    return NextResponse.json(
-      { response: "Authentication required." },
-      { status: 401 },
-    );
+    console.warn("[reader]", traceId, "missing session");
+    return respond({ response: "Authentication required." }, 401);
   }
 
-  const traceId = crypto.randomUUID();
   const { mode } = (await request.json()) as ReaderRequest;
   const apiKey = process.env.OPENAI_API_KEY;
   const promptsSource = PROMPTS_MODE_READER_SOURCE;
@@ -25,7 +29,7 @@ export async function POST(request: Request) {
 
   if (!apiKey) {
     console.warn("[reader]", traceId, "missing OPENAI_API_KEY");
-    return NextResponse.json({
+    return respond({
       response: "Add OPENAI_API_KEY to enable live responses.",
     });
   }
@@ -35,10 +39,7 @@ export async function POST(request: Request) {
     const promptConfig = prompts?.[mode];
     if (!promptConfig) {
       console.error("[reader]", traceId, "missing prompt config for mode", mode);
-      return NextResponse.json(
-        { response: "Unable to generate a response right now." },
-        { status: 400 },
-      );
+      return respond({ response: "Unable to generate a response right now." }, 400);
     }
 
     const result = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -60,10 +61,7 @@ export async function POST(request: Request) {
     if (!result.ok) {
       const errorBody = await result.text();
       console.error("[reader]", traceId, "openai error", result.status, errorBody);
-      return NextResponse.json(
-        { response: "Unable to generate a response right now." },
-        { status: 500 },
-      );
+      return respond({ response: "Unable to generate a response right now." }, 500);
     }
 
     const data = (await result.json()) as {
@@ -72,14 +70,11 @@ export async function POST(request: Request) {
 
     const content = data.choices?.[0]?.message?.content?.trim();
 
-    return NextResponse.json({
+    return respond({
       response: content ?? "No response received.",
     });
   } catch (error) {
     console.error("[reader]", traceId, "request failed", error);
-    return NextResponse.json(
-      { response: "Unable to generate a response right now." },
-      { status: 500 },
-    );
+    return respond({ response: "Unable to generate a response right now." }, 500);
   }
 }
