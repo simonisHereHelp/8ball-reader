@@ -32,6 +32,10 @@ export const getReaderResponse = async (mode: string) => {
     return lines.join("\n");
   }
 
-  const data = (await response.json()) as { response?: string };
-  return [startLine, data.response ?? "No response received."].join("\n");
+  const data = (await response.json()) as { response?: unknown };
+  const responseText =
+    typeof data.response === "string" && data.response.length > 0
+      ? data.response
+      : JSON.stringify(data);
+  return [startLine, responseText || "No response received."].join("\n");
 };
