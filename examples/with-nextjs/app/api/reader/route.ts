@@ -8,15 +8,17 @@ type ReaderRequest = {
 };
 
 export async function POST(request: Request) {
+  const traceId = crypto.randomUUID();
+
   const session = await auth();
   if (!session) {
+    console.warn("[reader]", traceId, "missing session");
     return NextResponse.json(
       { response: "Authentication required." },
-      { status: 401 },
+      { status: 401, headers: { "x-trace-id": traceId } },
     );
   }
 
-  const traceId = crypto.randomUUID();
   const { mode } = (await request.json()) as ReaderRequest;
   const apiKey = process.env.OPENAI_API_KEY;
   const promptsSource = PROMPTS_MODE_READER_SOURCE;
@@ -25,9 +27,10 @@ export async function POST(request: Request) {
 
   if (!apiKey) {
     console.warn("[reader]", traceId, "missing OPENAI_API_KEY");
-    return NextResponse.json({
-      response: "Add OPENAI_API_KEY to enable live responses.",
-    });
+    return NextResponse.json(
+      { response: "Add OPENAI_API_KEY to enable live responses." },
+      { headers: { "x-trace-id": traceId } },
+    );
   }
 
   try {
@@ -37,7 +40,7 @@ export async function POST(request: Request) {
       console.error("[reader]", traceId, "missing prompt config for mode", mode);
       return NextResponse.json(
         { response: "Unable to generate a response right now." },
-        { status: 400 },
+        { status: 400, headers: { "x-trace-id": traceId } },
       );
     }
 
@@ -62,7 +65,7 @@ export async function POST(request: Request) {
       console.error("[reader]", traceId, "openai error", result.status, errorBody);
       return NextResponse.json(
         { response: "Unable to generate a response right now." },
-        { status: 500 },
+        { status: 500, headers: { "x-trace-id": traceId } },
       );
     }
 
@@ -72,14 +75,15 @@ export async function POST(request: Request) {
 
     const content = data.choices?.[0]?.message?.content?.trim();
 
-    return NextResponse.json({
-      response: content ?? "No response received.",
-    });
+    return NextResponse.json(
+      { response: content ?? "No response received." },
+      { headers: { "x-trace-id": traceId } },
+    );
   } catch (error) {
     console.error("[reader]", traceId, "request failed", error);
     return NextResponse.json(
       { response: "Unable to generate a response right now." },
-      { status: 500 },
+      { status: 500, headers: { "x-trace-id": traceId } },
     );
   }
 }
