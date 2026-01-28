@@ -44,7 +44,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   }, [actions, currentMode, isDoubleTap]);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" ref={cameraContainerRef}>
       <div className="flex-1 relative p-0.5 min-h-0 flex flex-col">
         {!state.cameraError && (
           <div className="absolute left-4 top-4 z-20 bg-transparent text-white text-sm font-medium drop-shadow-md">
