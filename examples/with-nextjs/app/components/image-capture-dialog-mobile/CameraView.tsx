@@ -29,10 +29,24 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
     let active = true;
 
     const runReader = async () => {
+      actions.clearReaderDebugLines();
+      actions.addReaderDebugLine(`request start: ${new Date().toLocaleTimeString()}`);
+      actions.addReaderDebugLine(`mode: ${currentMode}`);
       actions.setReaderResponse("Generating response...");
-      const response = await getReaderResponse(currentMode);
+      const result = await getReaderResponse(currentMode);
+      if (result.traceId) {
+        actions.addReaderDebugLine(`x-trace-id: ${result.traceId}`);
+      }
+      if (!result.ok) {
+        actions.addReaderDebugLine("status: error");
+        if (result.detail) {
+          actions.addReaderDebugLine(`detail: ${result.detail}`);
+        }
+      } else {
+        actions.addReaderDebugLine("status: ok");
+      }
       if (active) {
-        actions.setReaderResponse(response);
+        actions.setReaderResponse(result.response);
       }
     };
 
@@ -44,13 +58,8 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   }, [actions, currentMode, isDoubleTap]);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col" ref={cameraContainerRef}>
       <div className="flex-1 relative p-0.5 min-h-0 flex flex-col">
-        {!state.cameraError && (
-          <div className="absolute left-4 top-4 z-20 bg-transparent text-white text-sm font-medium drop-shadow-md">
-            live stream...
-          </div>
-        )}
         {/* Error Overlay */}
         {state.cameraError && (
           <div className="flex flex-col items-center justify-center w-full h-full text-white/50 bg-black">
@@ -85,10 +94,21 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           </>
         )}
 
-        {!state.cameraError && state.readerResponse && (
+        {!state.cameraError && (state.readerResponse || state.readerDebugLines.length > 0) && (
           <div className="absolute inset-0 z-30 flex flex-col bg-gray-900/50 p-4">
             <div className="flex-1 overflow-y-auto rounded-lg bg-black/40 p-4 text-sm text-white">
-              <p className="whitespace-pre-wrap">{state.readerResponse}</p>
+              {state.readerDebugLines.length > 0 && (
+                <div className="mb-4 space-y-1 text-xs text-white/80">
+                  {state.readerDebugLines.map((line, index) => (
+                    <p key={`${line}-${index}`} className="whitespace-pre-wrap">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {state.readerResponse && (
+                <p className="whitespace-pre-wrap">{state.readerResponse}</p>
+              )}
             </div>
           </div>
         )}

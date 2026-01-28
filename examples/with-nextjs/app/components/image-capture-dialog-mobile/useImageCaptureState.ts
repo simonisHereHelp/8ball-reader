@@ -26,6 +26,7 @@ export const useImageCaptureState = (
   const [cameraError, setCameraError] = useState(false);
   const [error, setError] = useState("");
   const [readerResponse, setReaderResponse] = useState("");
+  const [readerDebugLines, setReaderDebugLines] = useState<string[]>([]);
 
   const cameraRef = useRef<WebCameraHandler | null>(null);
 
@@ -45,6 +46,7 @@ export const useImageCaptureState = (
     setImages([]);
     setError("");
     setReaderResponse("");
+    setReaderDebugLines([]);
     setShowGallery(false);
     setIsProcessingCapture(false);
     onOpenChange?.(false);
@@ -98,6 +100,7 @@ export const useImageCaptureState = (
     cameraError,
     error,
     readerResponse,
+    readerDebugLines,
   };
 
   const actions: Actions = {
@@ -109,6 +112,9 @@ export const useImageCaptureState = (
     setCameraError,
     setError,
     setReaderResponse,
+    addReaderDebugLine: (message: string) =>
+      setReaderDebugLines((prev) => [...prev, message]),
+    clearReaderDebugLines: () => setReaderDebugLines([]),
   };
 
   return { state, actions, cameraRef };

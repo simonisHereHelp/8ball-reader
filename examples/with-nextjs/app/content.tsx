@@ -25,9 +25,21 @@ function useIsMobile() {
 
 function Content() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [didAutoLaunch, setDidAutoLaunch] = useState(false);
   const isMobile = useIsMobile();
 
   const { data: session } = useSession();
+
+  useEffect(() => {
+    if (session && !didAutoLaunch) {
+      setIsDialogOpen(true);
+      setDidAutoLaunch(true);
+    }
+
+    if (!session && didAutoLaunch) {
+      setDidAutoLaunch(false);
+    }
+  }, [session, didAutoLaunch]);
 
   const handleOpen = () => setIsDialogOpen(true);
   const handleClose = () => setIsDialogOpen(false);
@@ -74,6 +86,7 @@ function Content() {
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                   <Button
                     onClick={handleOpen}
+                    disabled={!session}
                     className="app-button h-12 !px-8 !py-3 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 cursor-pointer"
                   >
                     <Camera className="w-5 h-5 mr-2" />

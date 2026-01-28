@@ -14,6 +14,7 @@ export interface State {
   cameraError: boolean;
   error: string;
   readerResponse: string;
+  readerDebugLines: string[];
 }
 
 export interface Actions {
@@ -25,6 +26,8 @@ export interface Actions {
   setCameraError: (error: boolean) => void;
   setError: (message: string) => void;
   setReaderResponse: (response: string) => void;
+  addReaderDebugLine: (message: string) => void;
+  clearReaderDebugLines: () => void;
 }
 
 export interface CameraViewProps {

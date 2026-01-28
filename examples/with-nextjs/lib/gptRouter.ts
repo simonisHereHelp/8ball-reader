@@ -4,6 +4,10 @@ import { auth } from "@/auth";
 import { PROMPTS_MODE_READER_SOURCE } from "@/lib/jsonCanonSources";
 
 export class GPT_Router {
+  static createTraceId() {
+    return crypto.randomUUID();
+  }
+
   static async _fetchFile(
     fileID: string,
     useAuth: boolean = false,
@@ -65,6 +69,49 @@ export class GPT_Router {
   ): Promise<string> {
     const config = await this._fetchFile(source);
     return config?.[mode]?.user ?? "";
+  }
+
+  static async getGPTResponse(system: string, user: string) {
+    const traceId = this.createTraceId();
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      const error = new Error("Missing OPENAI_API_KEY");
+      (error as Error & { traceId?: string }).traceId = traceId;
+      throw error;
+    }
+
+    const result = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+        temperature: 0.2,
+      }),
+    });
+
+    if (!result.ok) {
+      const errorBody = await result.text();
+      const error = new Error(`OpenAI error ${result.status}: ${errorBody}`);
+      (error as Error & { traceId?: string }).traceId = traceId;
+      throw error;
+    }
+
+    const data = (await result.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+
+    return {
+      response:
+        data.choices?.[0]?.message?.content?.trim() ?? "No response received.",
+      traceId,
+    };
   }
 
   private static _resolveLocalPath(source: string) {
