@@ -7,11 +7,14 @@ export const getReaderResponse = async (mode: string) => {
     .toString()
     .padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
   const startLine = `now starting readerClient ${startTime}`;
+  const startMs = performance.now();
   const response = await fetch("/api/reader", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mode }),
   });
+  const latencyMs = Math.round(performance.now() - startMs);
+  const latencyLine = `latency ms ${latencyMs}`;
 
   if (!response.ok) {
     let detail = "";
@@ -23,6 +26,7 @@ export const getReaderResponse = async (mode: string) => {
     }
     const lines = [
       startLine,
+      latencyLine,
       "Unable to generate a response right now.",
       `Status: ${response.status}`,
     ];
@@ -37,5 +41,7 @@ export const getReaderResponse = async (mode: string) => {
     typeof data.response === "string" && data.response.length > 0
       ? data.response
       : JSON.stringify(data);
-  return [startLine, responseText || "No response received."].join("\n");
+  return [startLine, latencyLine, responseText || "No response received."].join(
+    "\n",
+  );
 };
