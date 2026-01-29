@@ -24,7 +24,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   };
 
   useEffect(() => {
-    if (!isDoubleTap) return;
+    if (!isDoubleTap || !latestImage?.file) return;
 
     let active = true;
 
@@ -34,17 +34,11 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
       if (imageSize) {
         actions.setReaderResponse(`feeding camera view: ${imageSize} bytes`);
       }
-      if (!latestImage?.file) {
-        actions.setReaderResponse("No image available to read.");
-        return;
-      }
       const response = await getReaderResponse(currentMode, latestImage?.file);
       if (active) {
-        window.clearInterval(intervalId);
         actions.setReaderResponse(`here is new resp: ${response}`);
       } else {
-        window.clearInterval(intervalId);
-        actions.setReaderResponse(`intervalId ${intervalId}`);
+        actions.setReaderResponse("Reader response skipped (no longer active).");
       }
     };
 
@@ -53,7 +47,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
     return () => {
       active = false;
     };
-  }, [actions, currentMode, isDoubleTap]);
+  }, [actions, currentMode, isDoubleTap, latestImage?.file]);
 
   return (
     <div className="flex h-full flex-col" ref={cameraContainerRef}>
