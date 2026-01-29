@@ -9,7 +9,6 @@ import {
   normalizeCapture,
 } from "../shared/normalizeCapture";
 import type { Image, State, Actions } from "./types";
-import { playSuccessChime } from "./soundEffects";
 
 interface UseImageCaptureState {
   state: State;
@@ -36,11 +35,16 @@ export const useImageCaptureState = (
   // --- UI Feedback State ---
   const [error, setError] = useState("");
   const cameraRef = useRef<WebCameraHandler | null>(null);
+  const imagesRef = useRef<Image[]>([]);
 
   // Keep capture source in sync with props
   useEffect(() => {
     setCaptureSource(initialSource);
   }, [initialSource]);
+
+  useEffect(() => {
+    imagesRef.current = images;
+  }, [images]);
 
   // --- Handlers ---
 
@@ -64,6 +68,18 @@ export const useImageCaptureState = (
     onOpenChange?.(false);
   }, [images.length, initialSource, isSaving, onOpenChange]);
 
+  const summarizeImages = useCallback(
+    async (nextImages: Image[]) => {
+      await handleSummary({
+        images: nextImages,
+        setIsSaving,
+        setSummary,
+        setError,
+      });
+    },
+    [setIsSaving, setSummary, setError],
+  );
+
   const ingestFile = useCallback(
     async (file: File, source: "camera" | "photos", preferredName?: string) => {
       setIsProcessingCapture(true);
@@ -74,17 +90,17 @@ export const useImageCaptureState = (
           preferredName,
         });
 
-        // Reset summary context for the new set of images
+        const nextImages = [...imagesRef.current, { url: previewUrl, file: normalizedFile }];
         setSummary("");
-        setShowGallery(false);
-        setImages((prev) => [...prev, { url: previewUrl, file: normalizedFile }]);
+        setImages(nextImages);
+        await summarizeImages(nextImages);
       } catch (err) {
         setError(err instanceof CaptureError ? err.message : "Unable to process the image.");
       } finally {
         setIsProcessingCapture(false);
       }
     },
-    [],
+    [summarizeImages],
   );
 
   const handleCapture = useCallback(async () => {
@@ -111,19 +127,13 @@ export const useImageCaptureState = (
 
   const handleSummarize = useCallback(async () => {
     setError("");
-    
-    const didSummarize = await handleSummary({
+    await handleSummary({
       images,
       setIsSaving,
       setSummary,
       setError,
     });
-
-    if (didSummarize && images.length > 0) {
-      setShowGallery(true);
-      playSuccessChime();
-    }
-  }, [images]);
+  }, [images, setIsSaving, setSummary, setError]);
 
   // --- Aggregate State & Actions ---
 
