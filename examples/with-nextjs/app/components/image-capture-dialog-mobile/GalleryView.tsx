@@ -1,4 +1,4 @@
-import { X, RefreshCw } from "lucide-react";
+import { X } from "lucide-react";
 import type { State, Actions } from "./types";
 
 export function GalleryView({ state, actions }: { state: State; actions: Actions }) {
@@ -30,81 +30,12 @@ export function GalleryView({ state, actions }: { state: State; actions: Actions
           ))}
         </div>
 
-        {/* Summary Editor Section */}
+        {/* Summary Section */}
         <div className="space-y-4">
           <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-blue-300">EDIT SUMMARY</label>
-            <textarea
-              value={state.editableSummary}
-              onChange={(e) => actions.setEditableSummary(e.target.value)}
-              placeholder="Add your summary here..."
-              className="w-full min-h-[150px] bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white focus:ring-1 focus:ring-blue-500 outline-none"
-            />
-          </div>
-
-          {/* Canon Selection */}
-          <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-blue-300">ISSUER CANONS</span>
-              <button
-                onClick={actions.refreshCanons}
-                className="app-button h-6 w-6 rounded-full flex items-center justify-center"
-              >
-                <RefreshCw
-                  size={14}
-                  className={state.issuerCanonsLoading ? "animate-spin" : ""}
-                />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {state.issuerCanons.map((canon) => (
-                <button
-                  key={canon.master}
-                  onClick={() => actions.selectCanon(canon)}
-                  className={`text-[10px] px-3 py-1 rounded-full border transition ${
-                    state.selectedCanon?.master === canon.master
-                      ? "bg-blue-600 border-blue-400"
-                      : "border-white/20 text-white/70"
-                  }`}
-                >
-                  {canon.master}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Target Subfolder Selection */}
-          <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xs font-bold text-blue-300">TARGET SUBFOLDER</span>
-              <button
-                onClick={actions.refreshSubfolders}
-                className="app-button h-6 w-6 rounded-full flex items-center justify-center"
-              >
-                <RefreshCw size={14} className={state.subfolderLoading ? "animate-spin" : ""} />
-              </button>
-            </div>
-            {state.subfolderError && (
-              <p className="text-[10px] text-red-300 mb-2">{state.subfolderError}</p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {state.availableSubfolders.length === 0 && !state.subfolderLoading ? (
-                <span className="text-[10px] text-white/60">No subfolders configured.</span>
-              ) : (
-                state.availableSubfolders.map((subfolder) => (
-                  <button
-                    key={subfolder.topic}
-                    onClick={() => actions.selectSubfolder(subfolder)}
-                    className={`text-[10px] px-3 py-1 rounded-full border transition ${
-                      state.selectedSubfolder?.topic === subfolder.topic
-                        ? "bg-blue-600 border-blue-400"
-                        : "border-white/20 text-white/70"
-                    }`}
-                  >
-                    {subfolder.topic}
-                  </button>
-                ))
-              )}
+            <label className="text-xs font-bold text-blue-300">VIEW SUMMARY</label>
+            <div className="w-full min-h-[150px] whitespace-pre-wrap bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white">
+              {state.summary || "No summary yet. Tap Summarize to generate one."}
             </div>
           </div>
         </div>

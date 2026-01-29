@@ -8,12 +8,7 @@ import {
   DEFAULTS,
   normalizeCapture,
 } from "../shared/normalizeCapture";
-import type { Image, State, Actions, SubfolderOption } from "./types";
-import {
-  applyCanonToSummary,
-  fetchIssuerCanonList,
-  type IssuerCanonEntry,
-} from "./issuerCanonUtils";
+import type { Image, State, Actions } from "./types";
 import { playSuccessChime } from "./soundEffects";
 
 interface UseImageCaptureState {
@@ -36,24 +31,10 @@ export const useImageCaptureState = (
   const [captureSource, setCaptureSource] = useState<"camera" | "photos">(initialSource);
 
   // --- Summary & AI State ---
-  const [draftSummary, setDraftSummary] = useState(""); // Original AI output
-  const [editableSummary, setEditableSummary] = useState(""); // User's working text
-  const [summaryImageUrl, setSummaryImageUrl] = useState<string | null>(null);
-  const [showSummaryOverlay, setShowSummaryOverlay] = useState(false);
+  const [summary, setSummary] = useState("");
 
   // --- UI Feedback State ---
   const [error, setError] = useState("");
-  const [availableSubfolders, setAvailableSubfolders] = useState<SubfolderOption[]>([]);
-  const [selectedSubfolder, setSelectedSubfolder] = useState<SubfolderOption | null>(null);
-  const [subfolderLoading, setSubfolderLoading] = useState(false);
-  const [subfolderError, setSubfolderError] = useState("");
-
-  // --- Canon / Metadata State ---
-  const [issuerCanons, setIssuerCanons] = useState<IssuerCanonEntry[]>([]);
-  const [issuerCanonsLoading, setIssuerCanonsLoading] = useState(false);
-  const [canonError, setCanonError] = useState("");
-  const [selectedCanon, setSelectedCanon] = useState<IssuerCanonEntry | null>(null);
-
   const cameraRef = useRef<WebCameraHandler | null>(null);
 
   // Keep capture source in sync with props
@@ -75,18 +56,9 @@ export const useImageCaptureState = (
     }
     // Reset all state
     setImages([]);
-    setDraftSummary("");
-    setEditableSummary("");
-    setSummaryImageUrl(null);
+    setSummary("");
     setError("");
-    setShowSummaryOverlay(false);
     setShowGallery(false);
-    setAvailableSubfolders([]);
-    setSelectedSubfolder(null);
-    setSubfolderError("");
-    setIssuerCanons([]);
-    setCanonError("");
-    setSelectedCanon(null);
     setCaptureSource(initialSource);
     setIsProcessingCapture(false);
     onOpenChange?.(false);
@@ -103,9 +75,7 @@ export const useImageCaptureState = (
         });
 
         // Reset summary context for the new set of images
-        setSummaryImageUrl(null);
-        setDraftSummary("");
-        setEditableSummary("");
+        setSummary("");
         setShowGallery(false);
         setImages((prev) => [...prev, { url: previewUrl, file: normalizedFile }]);
       } catch (err) {
@@ -142,17 +112,10 @@ export const useImageCaptureState = (
   const handleSummarize = useCallback(async () => {
     setError("");
     
-    const setSummaries = (newSummary: string) => {
-      setDraftSummary(newSummary);
-      setEditableSummary(newSummary); 
-    };
-    
     const didSummarize = await handleSummary({
       images,
       setIsSaving,
-      setSummary: setSummaries,
-      setSummaryImageUrl,
-      setShowSummaryOverlay,
+      setSummary,
       setError,
     });
 
@@ -161,68 +124,6 @@ export const useImageCaptureState = (
       playSuccessChime();
     }
   }, [images]);
-
-  const refreshCanons = useCallback(async () => {
-    if (issuerCanonsLoading) return;
-    setIssuerCanonsLoading(true);
-    setCanonError("");
-    try {
-      const entries = await fetchIssuerCanonList();
-      setIssuerCanons(entries);
-    } catch (err) {
-      setCanonError(err instanceof Error ? err.message : "Unable to load canon list.");
-    } finally {
-      setIssuerCanonsLoading(false);
-    }
-  }, [issuerCanonsLoading]);
-
-  const refreshSubfolders = useCallback(async () => {
-    if (subfolderLoading) return;
-    setSubfolderLoading(true);
-    setSubfolderError("");
-    try {
-      const response = await fetch("/api/active-subfolders");
-      if (!response.ok) {
-        throw new Error("Unable to load subfolder options.");
-      }
-      const json = (await response.json().catch(() => null)) as
-        | { subfolders?: SubfolderOption[] }
-        | null;
-      setAvailableSubfolders(json?.subfolders ?? []);
-    } catch (err) {
-      setSubfolderError(err instanceof Error ? err.message : "Unable to load subfolder options.");
-    } finally {
-      setSubfolderLoading(false);
-    }
-  }, [subfolderLoading]);
-
-  const selectSubfolder = useCallback((subfolder: SubfolderOption) => {
-    setSelectedSubfolder(subfolder);
-  }, []);
-
-  const selectCanon = useCallback((canon: IssuerCanonEntry) => {
-    setSelectedCanon(canon);
-    setEditableSummary((current) =>
-      applyCanonToSummary({
-        canon,
-        currentSummary: current,
-        draftSummary,
-      }),
-    );
-  }, [draftSummary]);
-
-  // Auto-refresh canons when gallery opens
-  useEffect(() => {
-    if (showGallery && !issuerCanons.length && !issuerCanonsLoading) {
-      refreshCanons();
-    }
-  }, [showGallery, issuerCanons.length, issuerCanonsLoading, refreshCanons]);
-
-  useEffect(() => {
-    if (showGallery && !availableSubfolders.length && !subfolderLoading) {
-      refreshSubfolders();
-    }
-  }, [showGallery, availableSubfolders.length, subfolderLoading, refreshSubfolders]);
 
   // --- Aggregate State & Actions ---
 
@@ -234,19 +135,8 @@ export const useImageCaptureState = (
     showGallery,
     cameraError,
     captureSource,
-    draftSummary,
-    editableSummary,
-    summaryImageUrl,
+    summary,
     error,
-    availableSubfolders,
-    selectedSubfolder,
-    subfolderLoading,
-    subfolderError,
-    showSummaryOverlay,
-    issuerCanons,
-    issuerCanonsLoading,
-    canonError,
-    selectedCanon,
   };
 
   const actions: Actions = {
@@ -257,16 +147,9 @@ export const useImageCaptureState = (
     handleSummarize,
     handleClose,
     setCaptureSource,
-    setEditableSummary,
-    setDraftSummary,
     setShowGallery,
     setCameraError,
     setError,
-    setCanonError,
-    refreshSubfolders,
-    selectSubfolder,
-    refreshCanons,
-    selectCanon,
   };
 
   return { state, actions, cameraRef };
