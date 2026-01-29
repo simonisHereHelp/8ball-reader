@@ -29,6 +29,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
     let active = true;
 
     const runReader = async () => {
+      actions.setReaderResponse("Generating response...");
       const startMs = Date.now();
       actions.setReaderResponse("Elapsed: 0.0s");
       const intervalId = window.setInterval(() => {
@@ -40,9 +41,10 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
       const response = await getReaderResponse(currentMode);
       if (active) {
         window.clearInterval(intervalId);
-        actions.setReaderResponse(response);
+        actions.setReaderResponse(`here is new resp: ${response}`);
       } else {
         window.clearInterval(intervalId);
+        actions.setReaderResponse(`intervalId ${intervalId}`);
       }
     };
 

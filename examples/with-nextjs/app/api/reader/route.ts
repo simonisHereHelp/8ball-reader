@@ -51,6 +51,9 @@ export async function POST(request: Request) {
         { response: "Unable to generate a response right now." },
         { status: 500 },
       );
+    } else {
+      const successBody = await result.clone().text();
+      console.error("[reader] response", successBody);
     }
 
     const data = (await result.json()) as {
