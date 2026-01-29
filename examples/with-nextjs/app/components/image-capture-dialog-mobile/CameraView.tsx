@@ -40,7 +40,11 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
       }
       const response = await getReaderResponse(currentMode, latestImage?.file);
       if (active) {
-        actions.setReaderResponse(response);
+        window.clearInterval(intervalId);
+        actions.setReaderResponse(`here is new resp: ${response}`);
+      } else {
+        window.clearInterval(intervalId);
+        actions.setReaderResponse(`intervalId ${intervalId}`);
       }
     };
 
