@@ -1,6 +1,12 @@
 import { X } from "lucide-react";
 import type { Actions, State } from "./types";
 
+type GalleryViewProps = {
+  state: State;
+  actions: Actions;
+};
+
+export function GalleryView({ state, actions }: GalleryViewProps) {
   return (
     <div className="absolute inset-0 bg-black/95 z-40 flex flex-col">
       <div className="flex justify-between p-4 border-b border-white/10">
