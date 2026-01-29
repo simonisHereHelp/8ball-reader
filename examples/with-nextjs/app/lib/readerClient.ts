@@ -25,8 +25,6 @@ export const getReaderResponse = async (mode: string, imageFile?: File) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mode, imageData }),
   });
-  const latencyMs = Math.round(performance.now() - startMs);
-  const latencyLine = `latency ms ${latencyMs}`;
 
   if (!response.ok) {
     let detail = "";
