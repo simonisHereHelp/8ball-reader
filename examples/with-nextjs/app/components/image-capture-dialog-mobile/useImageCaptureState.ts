@@ -2,11 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import type { WebCameraHandler, FacingMode } from "@shivantra/react-web-camera";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { handleSave } from "@/lib/handleSave";
 import { handleSummary } from "@/lib/handleSummary";
-import { normalizeFilename } from "@/lib/normalizeFilename";
 import {
   CaptureError,
   DEFAULTS,
@@ -47,7 +43,6 @@ export const useImageCaptureState = (
 
   // --- UI Feedback State ---
   const [error, setError] = useState("");
-  const [saveMessage, setSaveMessage] = useState("");
   const [availableSubfolders, setAvailableSubfolders] = useState<SubfolderOption[]>([]);
   const [selectedSubfolder, setSelectedSubfolder] = useState<SubfolderOption | null>(null);
   const [subfolderLoading, setSubfolderLoading] = useState(false);
@@ -60,8 +55,6 @@ export const useImageCaptureState = (
   const [selectedCanon, setSelectedCanon] = useState<IssuerCanonEntry | null>(null);
 
   const cameraRef = useRef<WebCameraHandler | null>(null);
-  const { data: session } = useSession();
-  const router = useRouter();
 
   // Keep capture source in sync with props
   useEffect(() => {
@@ -86,7 +79,6 @@ export const useImageCaptureState = (
     setEditableSummary("");
     setSummaryImageUrl(null);
     setError("");
-    setSaveMessage("");
     setShowSummaryOverlay(false);
     setShowGallery(false);
     setAvailableSubfolders([]);
@@ -114,7 +106,6 @@ export const useImageCaptureState = (
         setSummaryImageUrl(null);
         setDraftSummary("");
         setEditableSummary("");
-        setSaveMessage("");
         setShowGallery(false);
         setImages((prev) => [...prev, { url: previewUrl, file: normalizedFile }]);
       } catch (err) {
@@ -149,7 +140,6 @@ export const useImageCaptureState = (
   }, [facingMode]);
 
   const handleSummarize = useCallback(async () => {
-    setSaveMessage("");
     setError("");
     
     const setSummaries = (newSummary: string) => {
@@ -234,60 +224,6 @@ export const useImageCaptureState = (
     }
   }, [showGallery, availableSubfolders.length, subfolderLoading, refreshSubfolders]);
 
-  const handleSaveImages = useCallback(async () => {
-    if (!session || isSaving) return;
-    
-    const finalSummary = editableSummary.trim();
-    if (!finalSummary) {
-      setError("Please ensure the summary is not empty before saving.");
-      return;
-    }
-
-    setSaveMessage("");
-    setError("");
-
-    await handleSave({
-      images,
-      draftSummary,
-      finalSummary,
-      selectedCanon,
-      selectedSubfolder,
-      setIsSaving,
-      onError: setError,
-      onSuccess: ({ setName, targetFolderId, topic }) => {
-        setShowGallery(false);
-        const folderPath = topic || targetFolderId?.split("/").pop() || "Drive";
-        const displayPath = folderPath.replace(/^Drive_/, "");
-        const resolvedName = normalizeFilename(setName || "(untitled)");
-        
-        sessionStorage.setItem(
-          "uploadConfirmation",
-          JSON.stringify({ folder: displayPath, filename: resolvedName }),
-        );
-        window.dispatchEvent(new Event("upload-confirmation"));
-        setSaveMessage(`uploaded to: ${displayPath} ✅\nname: ${resolvedName} ✅`);
-        setImages([]);
-        setDraftSummary("");
-        setEditableSummary("");
-        setSelectedCanon(null);
-        setSelectedSubfolder(null);
-        playSuccessChime();
-        onOpenChange?.(false);
-        router.push("/");
-      },
-    });
-  }, [
-    session,
-    isSaving,
-    images,
-    draftSummary,
-    editableSummary,
-    selectedCanon,
-    selectedSubfolder,
-    onOpenChange,
-    router,
-  ]);
-
   // --- Aggregate State & Actions ---
 
   const state: State = {
@@ -302,7 +238,6 @@ export const useImageCaptureState = (
     editableSummary,
     summaryImageUrl,
     error,
-    saveMessage,
     availableSubfolders,
     selectedSubfolder,
     subfolderLoading,
@@ -320,7 +255,6 @@ export const useImageCaptureState = (
     handleAlbumSelect,
     handleCameraSwitch,
     handleSummarize,
-    handleSaveImages,
     handleClose,
     setCaptureSource,
     setEditableSummary,

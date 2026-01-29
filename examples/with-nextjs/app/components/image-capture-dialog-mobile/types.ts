@@ -27,7 +27,6 @@ export interface State {
   summaryImageUrl: string | null;
   showSummaryOverlay: boolean;
   error: string;
-  saveMessage: string;
   availableSubfolders: SubfolderOption[];
   selectedSubfolder: SubfolderOption | null;
   subfolderLoading: boolean;
@@ -44,7 +43,6 @@ export interface Actions {
   handleCameraSwitch: () => Promise<void>;
   handleAlbumSelect: (files: FileList | null) => Promise<void>;
   handleSummarize: () => Promise<void>;
-  handleSaveImages: () => Promise<void>;
   handleClose: () => void;
   setCaptureSource: (source: "camera" | "photos") => void;
   setEditableSummary: (summary: string) => void;

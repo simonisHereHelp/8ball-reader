@@ -1,5 +1,4 @@
-import { Loader2, Save, X, RefreshCw } from "lucide-react";
-import { Button } from "@/ui/components";
+import { X, RefreshCw } from "lucide-react";
 import type { State, Actions } from "./types";
 
 export function GalleryView({ state, actions }: { state: State; actions: Actions }) {
@@ -111,16 +110,6 @@ export function GalleryView({ state, actions }: { state: State; actions: Actions
         </div>
       </div>
 
-      <div className="p-4 border-t border-white/10">
-        <Button onClick={actions.handleSaveImages} disabled={state.isSaving || !state.editableSummary.trim()} className="app-button w-full h-12">
-          {state.isSaving ? (
-            <Loader2 className="animate-spin mr-2" />
-          ) : (
-            <Save className="mr-2" />
-          )}{" "}
-          <span className="app-button-label">Save to Drive</span>
-        </Button>
-      </div>
     </div>
   );
 }
