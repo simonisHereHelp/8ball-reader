@@ -16,6 +16,7 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   const latestImage = state.images[state.images.length - 1];
   const cameraContainerRef = useRef<HTMLDivElement>(null);
   const isDoubleTap = useDoubleTapTracker(cameraContainerRef);
+  const isReaderActiveRef = useRef(false);
   const [modeIndex, setModeIndex] = useState(0);
   const currentMode = MODE_TOGGLE_OPTIONS[modeIndex];
 
@@ -29,10 +30,27 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
     let active = true;
 
     const runReader = async () => {
+      if (isReaderActiveRef.current) {
+        return;
+      }
+      isReaderActiveRef.current = true;
       actions.setReaderResponse("Generating response...");
-      const response = await getReaderResponse(currentMode);
-      if (active) {
-        actions.setReaderResponse(response);
+      const imageSize = latestImage?.file?.size;
+      if (imageSize) {
+        actions.setReaderResponse(`feeding camera view: ${imageSize} bytes`);
+      }
+      if (!latestImage?.file) {
+        actions.setReaderResponse("No image available to read.");
+        isReaderActiveRef.current = false;
+        return;
+      }
+      try {
+        const response = await getReaderResponse(currentMode, latestImage?.file);
+        if (active) {
+          actions.setReaderResponse(response);
+        }
+      } finally {
+        isReaderActiveRef.current = false;
       }
     };
 
