@@ -4,7 +4,6 @@ import {
   Camera,
   CameraOff,
   ImageIcon,
-  Loader2,
   RefreshCcw,
   X,
 } from "lucide-react";
@@ -27,7 +26,6 @@ export function ImageCaptureDialogDesktop({
   onOpenChange: () => void;
 }) {
   const [images, setImages] = useState<Image[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [cameraError, setCameraError] = useState(false);
 
@@ -43,40 +41,11 @@ export function ImageCaptureDialogDesktop({
   };
 
   /**
-   * Handles the save operation. It simulates an asynchronous upload process.
-   * In a real application, this is where you would perform an API call.
-   */
-  const handleSave = async () => {
-    if (images.length === 0) return;
-    setIsSaving(true);
-    try {
-      const files = images.map((image) => image.file);
-
-      // This Promise simulates a network request, like an API call to upload the files.
-      // Replace this with your actual save logic (e.g., using fetch or axios).
-      await new Promise<void>((resolve) => {
-        setTimeout(() => {
-          console.log("Saved files:", files);
-          resolve();
-        }, 3000);
-      });
-
-      setImages([]);
-      onOpenChange?.();
-    } catch (error) {
-      console.error("Failed to save images:", error);
-      // You could add an error state here to show an alert to the user.
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  /**
    * Handles the dialog close action. It prompts the user for confirmation
    * if there are unsaved images to prevent data loss.
    */
   const handleClose = () => {
-    if (images.length > 0 && !isSaving) {
+    if (images.length > 0) {
       if (
         !window.confirm(
           "You have unsaved images. Are you sure you want to close?"
@@ -155,7 +124,6 @@ export function ImageCaptureDialogDesktop({
               <div className="absolute inset-x-0 bottom-0 pb-4 flex items-center justify-center gap-3">
                 <Button
                   onClick={handleCapture}
-                  disabled={isSaving}
                   aria-label="Capture image"
                   className="app-button w-16 h-16 rounded-full border-4 border-white/50 shadow-xl transition-all duration-200 hover:scale-105 cursor-pointer"
                 >
@@ -164,7 +132,6 @@ export function ImageCaptureDialogDesktop({
                 <Button
                   size="icon"
                   onClick={handleCameraSwitch}
-                  disabled={isSaving}
                   aria-label="Switch camera"
                   className="app-button w-12 h-12 shadow-lg cursor-pointer"
                 >
@@ -228,41 +195,12 @@ export function ImageCaptureDialogDesktop({
             <div className="sticky bottom-0 bg-white p-3 sm:p-4 border-t border-slate-200 flex gap-2 flex-none">
               <Button
                 onClick={handleClose}
-                disabled={isSaving}
                 className="app-button flex-1 cursor-pointer"
               >
-                <span className="app-button-label">Cancel</span>
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={images.length === 0 || isSaving}
-                className="app-button flex-1 text-sm sm:text-base py-2 sm:py-3 cursor-pointer"
-              >
-                {isSaving ? (
-                  <>
-                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2 animate-spin" />
-                    <span className="app-button-label">Saving...</span>
-                  </>
-                ) : (
-                  <span className="app-button-label">
-                    Save{images.length > 0 ? ` (${images.length})` : ""}
-                  </span>
-                )}
+                <span className="app-button-label">Close</span>
               </Button>
             </div>
           </div>
-
-          {/* Loading Overlay */}
-          {isSaving && (
-            <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50">
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 shadow-xl flex flex-col items-center gap-3 sm:gap-4 mx-4">
-                <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-blue-600" />
-                <p className="text-lg font-semibold text-slate-900 mb-">
-                  Saving images...
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>

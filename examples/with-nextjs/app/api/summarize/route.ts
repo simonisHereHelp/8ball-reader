@@ -3,10 +3,7 @@
 import { NextResponse } from "next/server";
 
 import { GPT_Router } from "@/lib/gptRouter";
-import {
-  CANONICALS_BIBLE_SOURCE,
-  PROMPTS_MODE_READER_SOURCE,
-} from "@/lib/jsonCanonSources";
+import { PROMPTS_MODE_READER_SOURCE } from "@/lib/jsonCanonSources";
 
 
 export async function POST(req: Request) {
@@ -15,21 +12,8 @@ export async function POST(req: Request) {
 
   const PROMPT_ID = PROMPTS_MODE_READER_SOURCE;
 
-  const CANONICAL_FILE_ID = CANONICALS_BIBLE_SOURCE;
-
   try {
-
-    // 1️⃣ 獲取準備好的 Bible 數據 (物件格式)
-
-    // 內部封裝了 fetchCanonicalFileContent
-
-    const bibleData = await GPT_Router._fetchFile(CANONICAL_FILE_ID);
-
-
-
-    // 2️⃣ 取得注入數據後的 Prompt
-
-    // 注意：getUserPrompt 內部不會再發起 Bible 的 fetch 請求
+    // 1️⃣ 取得 Prompt 設定
 
     const [systemPrompt, userPrompt] = await Promise.all([
 
@@ -41,7 +25,7 @@ export async function POST(req: Request) {
 
 
 
-    // 3️⃣ 圖片處理邏輯 (與先前一致)
+    // 2️⃣ 圖片處理邏輯 (與先前一致)
 
     const formData = await req.formData();
 
@@ -61,7 +45,7 @@ export async function POST(req: Request) {
 
 
 
-    // 4️⃣ 呼叫 OpenAI
+    // 3️⃣ 呼叫 OpenAI
 
     const content = [
 
@@ -120,4 +104,3 @@ export async function POST(req: Request) {
   }
 
 }
-
