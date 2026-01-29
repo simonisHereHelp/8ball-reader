@@ -30,7 +30,11 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
 
     const runReader = async () => {
       actions.setReaderResponse("Generating response...");
-      const response = await getReaderResponse(currentMode);
+      if (!latestImage?.file) {
+        actions.setReaderResponse("No image available to read.");
+        return;
+      }
+      const response = await getReaderResponse(currentMode, latestImage?.file);
       if (active) {
         actions.setReaderResponse(response);
       }
