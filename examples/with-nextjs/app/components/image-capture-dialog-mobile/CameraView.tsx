@@ -30,15 +30,15 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
 
     const runReader = async () => {
       actions.setReaderResponse("Generating response...");
-      const startMs = Date.now();
-      actions.setReaderResponse("Elapsed: 0.0s");
-      const intervalId = window.setInterval(() => {
-        const elapsedSeconds = ((Date.now() - startMs) / 1000).toFixed(1);
-        actions.setReaderResponse(
-          `Elapsed: ${elapsedSeconds}s`,
-        );
-      }, 500);
-      const response = await getReaderResponse(currentMode);
+      const imageSize = latestImage?.file?.size;
+      if (imageSize) {
+        actions.setReaderResponse(`feeding camera view: ${imageSize} bytes`);
+      }
+      if (!latestImage?.file) {
+        actions.setReaderResponse("No image available to read.");
+        return;
+      }
+      const response = await getReaderResponse(currentMode, latestImage?.file);
       if (active) {
         window.clearInterval(intervalId);
         actions.setReaderResponse(`here is new resp: ${response}`);

@@ -4,13 +4,15 @@ import { GPT_Router } from "@/lib/gptRouter";
 
 type ReaderRequest = {
   mode: string;
+  imageData?: string;
 };
 
 export async function POST(request: Request) {
-  const { mode } = (await request.json()) as ReaderRequest;
+  const { mode, imageData } = (await request.json()) as ReaderRequest;
   const promptsSource = PROMPTS_MODE_READER_SOURCE;
 
   console.info("[reader] mode", mode, "source", promptsSource);
+  console.info("[reader] image provided", Boolean(imageData));
 
   try {
     const prompts = await GPT_Router.getPromptsMap(promptsSource);
@@ -27,6 +29,13 @@ export async function POST(request: Request) {
     const apiKey = process.env.OPENAI_API_KEY ?? "";
     console.info("[reader] apiKey present", Boolean(apiKey));
 
+    const userContent = imageData
+      ? [
+          { type: "text", text: promptConfig.user },
+          { type: "image_url", image_url: { url: imageData } },
+        ]
+      : promptConfig.user;
+
     const result = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -37,7 +46,7 @@ export async function POST(request: Request) {
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: promptConfig.system },
-          { role: "user", content: promptConfig.user },
+          { role: "user", content: userContent },
         ],
         temperature: 0.2,
       }),
