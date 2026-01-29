@@ -72,7 +72,7 @@ function Content() {
             <Camera className="w-8 h-8 text-blue-600 dark:text-blue-400" />
           </div>
           <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-4">
-            文件狗 DocuSniff
+            X Read
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
             Google Login(登錄): {session ? "✓" : "❌"}
@@ -106,12 +106,6 @@ function Content() {
                   >
                     <Camera className="w-5 h-5 mr-2" />
                     <span className="app-button-label">Launch Camera</span>
-                  </Button>
-                  <Button
-                    onClick={() => handleOpen("photos")}
-                    className="app-button h-12 !px-8 !py-3 text-lg font-medium rounded-lg shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
-                  >
-                    <span className="app-button-label">Photo Album</span>
                   </Button>
                 </div>
                 {uploadConfirmation ? (

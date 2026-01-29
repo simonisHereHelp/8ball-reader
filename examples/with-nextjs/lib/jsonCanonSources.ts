@@ -15,9 +15,9 @@ const resolveJsonSource = (
   return buildLocalPath(localFileName);
 };
 
-export const PROMPT_SUMMARY_SOURCE = resolveJsonSource(
-  process.env.PROMPT_SUMMARY_JSON_PATH,
-  process.env.PROMPT_SUMMARY_JSON_ID,
+export const PROMPTS_MODE_READER_SOURCE = resolveJsonSource(
+  process.env.PROMPTS_MODE_READER_PATH,
+  process.env.PROMPTS_MODE_READER_ID,
   "prompt_summary.json"
 );
 

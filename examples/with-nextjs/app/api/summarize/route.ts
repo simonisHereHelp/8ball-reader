@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { GPT_Router } from "@/lib/gptRouter";
 import {
   CANONICALS_BIBLE_SOURCE,
-  PROMPT_SUMMARY_SOURCE,
+  PROMPTS_MODE_READER_SOURCE,
 } from "@/lib/jsonCanonSources";
 
 
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
   const apiKey = process.env.OPENAI_API_KEY;
 
-  const PROMPT_ID = PROMPT_SUMMARY_SOURCE;
+  const PROMPT_ID = PROMPTS_MODE_READER_SOURCE;
 
   const CANONICAL_FILE_ID = CANONICALS_BIBLE_SOURCE;
 
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
       GPT_Router.getSystemPrompt(PROMPT_ID),
 
-      GPT_Router.getUserPrompt(PROMPT_ID, bibleData)
+      GPT_Router.getUserPrompt(PROMPT_ID)
 
     ]);
 

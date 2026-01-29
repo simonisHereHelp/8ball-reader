@@ -51,55 +51,9 @@ export class GPT_Router {
     return config.system;
   }
 
-  /**
-   * 通用的 User Prompt 產生器
-   * @param promptFileID - 模板 ID (summary 或 setName)
-   * @param options - 包含 bibleData 或 summary 的物件
-   */
-  static async getUserPrompt(
-    promptFileID: string,
-    options: {
-      bibleData?: any;
-      summary?: string;
-      wordTarget?: number;
-    }
-  ): Promise<string> {
+    static async getUserPrompt(promptFileID: string): Promise<string> {
     const config = await this._fetchFile(promptFileID);
-    let userPrompt = config.user;
-    const { bibleData, summary, wordTarget } = options;
-
-    // 1. 處理 Bible 數據替換 (用於 Summarize 階段)
-    if (bibleData) {
-      // 1. 提取標準名稱列表 (用於輸出的唯一選項)
-      const issuerNames = bibleData.issuers?.map((i: any) => i.master) || [];
-      const typeNames = bibleData.typeOfDoc?.map((t: any) => t.master) || [];
-      const actionNames = bibleData.action?.map((a: any) => a.master) || [];
-
-      // 2. 提取「標準名與別名」的對照參考 (用於加強 GPT 的比對能力)
-      // 格式如:{"兆豐": ["兆豐銀行", "Mega Bank"], "勞保局": ["勞工保險局"]}
-      const issuerMapping =
-        bibleData.issuers?.reduce((acc: any, curr: any) => {
-          acc[curr.master] = curr.aliases || [];
-          return acc;
-        }, {}) || {};
-
-      // 3. 執行替換
-      userPrompt = userPrompt
-        .replace("{{ISSUER_NAME}}", JSON.stringify(issuerNames))
-        .replace("{{ISSUER_ALIASES}}", JSON.stringify(issuerMapping))
-        .replace("{{TYPE_OF_DOC}}", JSON.stringify(typeNames))
-        .replace("{{ACTION}}", JSON.stringify(actionNames));
-    }
-    // 處理摘要替換 (用於 SetName 階段)
-    if (summary) {
-      userPrompt = userPrompt.replace("{{SUMMARY}}", summary.trim());
-    }
-
-    // 3. 處理字數限制 (優先序: 呼叫參數 > JSON 配置 > 硬編碼預設)
-    const finalWordTarget = wordTarget || config.wordTarget || 250;
-    userPrompt = userPrompt.replace("{{wordTarget}}", String(finalWordTarget));
-
-    return userPrompt;
+    return config.user;
   }
 
   /**
