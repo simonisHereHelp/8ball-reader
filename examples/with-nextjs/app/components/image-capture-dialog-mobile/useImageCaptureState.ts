@@ -92,7 +92,6 @@ export const useImageCaptureState = (
 
         const nextImages = [...imagesRef.current, { url: previewUrl, file: normalizedFile }];
         setSummary("");
-        setShowGallery(true);
         setImages(nextImages);
         await summarizeImages(nextImages);
       } catch (err) {

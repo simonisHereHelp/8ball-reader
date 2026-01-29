@@ -29,6 +29,17 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           />
         )}
 
+        {isCamera && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 pointer-events-none">
+            <div className="w-[85%] max-w-sm rounded-xl border border-white/20 bg-black/70 p-4 text-sm text-white shadow-lg">
+              <div className="text-xs font-bold text-blue-200 mb-2">SUMMARY</div>
+              <div className="max-h-40 overflow-y-auto whitespace-pre-wrap">
+                {state.summary || "Capture an image to generate a summary."}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Album Picker View */}
         {!isCamera && (
           <div className="relative w-full flex-1 rounded-lg bg-black flex items-center justify-center">

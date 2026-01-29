@@ -1,21 +1,5 @@
-import type { RefObject } from "react";
-import type { WebCameraHandler } from "@shivantra/react-web-camera";
-import { Camera, Image as ImageIcon, RefreshCcw, X } from "lucide-react";
-import WebCamera from "@shivantra/react-web-camera";
-import { Button } from "@/ui/components";
+import { X } from "lucide-react";
 import type { Actions, State } from "./types";
-
-export function GalleryView({
-  state,
-  actions,
-  cameraRef,
-}: {
-  state: State;
-  actions: Actions;
-  cameraRef: RefObject<WebCameraHandler | null>;
-}) {
-  const isCamera = state.captureSource === "camera";
-  const latestImage = state.images[state.images.length - 1];
 
   return (
     <div className="absolute inset-0 bg-black/95 z-40 flex flex-col">
@@ -116,25 +100,7 @@ export function GalleryView({
             </div>
           ))}
         </div>
-
-        {/* Summary Section */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-blue-300">VIEW SUMMARY</label>
-            <div className="w-full min-h-[150px] whitespace-pre-wrap bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white">
-              {state.summary || "No summary yet. Capture an image to generate one."}
-            </div>
-          </div>
-        </div>
       </div>
-
-      <input
-        id="photo-picker"
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => actions.handleAlbumSelect(e.target.files)}
-      />
     </div>
   );
 }
