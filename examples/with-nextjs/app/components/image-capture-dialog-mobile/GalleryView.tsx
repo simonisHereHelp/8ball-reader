@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { State, Actions } from "./types";
+import type { Actions, State } from "./types";
 
 export function GalleryView({ state, actions }: { state: State; actions: Actions }) {
   return (
@@ -29,18 +29,7 @@ export function GalleryView({ state, actions }: { state: State; actions: Actions
             </div>
           ))}
         </div>
-
-        {/* Summary Section */}
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-blue-300">VIEW SUMMARY</label>
-            <div className="w-full min-h-[150px] whitespace-pre-wrap bg-white/5 border border-white/10 rounded-lg p-3 text-sm text-white">
-              {state.summary || "No summary yet. Tap Summarize to generate one."}
-            </div>
-          </div>
-        </div>
       </div>
-
     </div>
   );
 }
