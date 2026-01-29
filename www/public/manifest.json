@@ -1,0 +1,22 @@
+{
+  "name": "XRead",
+  "short_name": "XRead",
+  "description": "A lightweight React component to capture images from the browser camera. Switch front/back, control quality, and use it in PWAs.",
+  "start_url": "/react-web-camera/?source=pwa",
+  "scope": "/react-web-camera/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/react-web-camera/icon",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/react-web-camera/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
