@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { PROMPTS_MODE_READER_SOURCE } from "@/lib/jsonCanonSources";
 import { GPT_Router } from "@/lib/gptRouter";
 
@@ -8,41 +7,25 @@ type ReaderRequest = {
 };
 
 export async function POST(request: Request) {
-  const traceId = crypto.randomUUID();
-
-  const session = await auth();
-  if (!session) {
-    console.warn("[reader]", traceId, "missing session");
-    return NextResponse.json(
-      { response: "Authentication required." },
-      { status: 401, headers: { "x-trace-id": traceId } },
-    );
-  }
-
   const { mode } = (await request.json()) as ReaderRequest;
-  const apiKey = process.env.OPENAI_API_KEY;
   const promptsSource = PROMPTS_MODE_READER_SOURCE;
 
-  console.info("[reader]", traceId, "mode", mode, "source", promptsSource);
-
-  if (!apiKey) {
-    console.warn("[reader]", traceId, "missing OPENAI_API_KEY");
-    return NextResponse.json(
-      { response: "Add OPENAI_API_KEY to enable live responses." },
-      { headers: { "x-trace-id": traceId } },
-    );
-  }
+  console.info("[reader] mode", mode, "source", promptsSource);
 
   try {
     const prompts = await GPT_Router.getPromptsMap(promptsSource);
     const promptConfig = prompts?.[mode];
+    console.info("[reader] prompt config", promptConfig);
     if (!promptConfig) {
-      console.error("[reader]", traceId, "missing prompt config for mode", mode);
+      console.error("[reader] missing prompt config for mode", mode);
       return NextResponse.json(
         { response: "Unable to generate a response right now." },
-        { status: 400, headers: { "x-trace-id": traceId } },
+        { status: 400 },
       );
     }
+
+    const apiKey = process.env.OPENAI_API_KEY ?? "";
+    console.info("[reader] apiKey present", Boolean(apiKey));
 
     const result = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -59,14 +42,18 @@ export async function POST(request: Request) {
         temperature: 0.2,
       }),
     });
+    console.info("[reader] openai response status", result.status);
 
     if (!result.ok) {
       const errorBody = await result.text();
-      console.error("[reader]", traceId, "openai error", result.status, errorBody);
+      console.error("[reader] openai error", result.status, errorBody);
       return NextResponse.json(
         { response: "Unable to generate a response right now." },
-        { status: 500, headers: { "x-trace-id": traceId } },
+        { status: 500 },
       );
+    } else {
+      const successBody = await result.clone().text();
+      console.error("[reader] response", successBody);
     }
 
     const data = (await result.json()) as {
@@ -77,13 +64,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { response: content ?? "No response received." },
-      { headers: { "x-trace-id": traceId } },
     );
   } catch (error) {
-    console.error("[reader]", traceId, "request failed", error);
+    console.error("[reader] request failed", error);
     return NextResponse.json(
       { response: "Unable to generate a response right now." },
-      { status: 500, headers: { "x-trace-id": traceId } },
+      { status: 500 },
     );
   }
 }
