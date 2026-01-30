@@ -52,6 +52,30 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           </div>
         )}
 
+        {state.summary && (
+          <div className="absolute left-4 right-4 top-4 z-30">
+            <div className="rounded-lg border border-white/20 bg-black/70 p-3 text-white">
+              <p className="text-xs font-semibold text-blue-300 mb-2">
+                Summary View
+              </p>
+              <p className="text-sm whitespace-pre-wrap">{state.summary}</p>
+            </div>
+          </div>
+        )}
+
+        {!state.summary && (
+          <div className="absolute left-4 right-4 top-4 z-30">
+            <div className="rounded-lg border border-white/10 bg-black/40 p-3 text-white/70">
+              <p className="text-xs font-semibold text-blue-300 mb-2">
+                Summary View
+              </p>
+              <p className="text-sm">
+                No summary yet. Tap Summarize to generate one.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Floating Capture UI */}
         {isCamera && (
           <div className="absolute bottom-8 w-full px-8 flex items-center justify-end z-20">
