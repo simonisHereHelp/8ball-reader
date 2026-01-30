@@ -26,7 +26,6 @@ export const useImageCaptureState = (
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingCapture, setIsProcessingCapture] = useState(false);
-  const [showGallery, setShowGallery] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const [captureSource, setCaptureSource] = useState<"camera" | "photos">(initialSource);
 
@@ -58,7 +57,6 @@ export const useImageCaptureState = (
     setImages([]);
     setSummary("");
     setError("");
-    setShowGallery(false);
     setCaptureSource(initialSource);
     setIsProcessingCapture(false);
     onOpenChange?.(false);
@@ -76,7 +74,6 @@ export const useImageCaptureState = (
 
         // Reset summary context for the new set of images
         setSummary("");
-        setShowGallery(false);
         setImages((prev) => [...prev, { url: previewUrl, file: normalizedFile }]);
       } catch (err) {
         setError(err instanceof CaptureError ? err.message : "Unable to process the image.");
@@ -87,21 +84,6 @@ export const useImageCaptureState = (
     [],
   );
 
-  const handleCapture = useCallback(async () => {
-    if (!cameraRef.current) return;
-    try {
-      const file = await cameraRef.current.capture();
-      if (file) await ingestFile(file, "camera", `capture-${Date.now()}.jpeg`);
-    } catch (err) {
-      setError("Unable to access camera capture.");
-    }
-  }, [ingestFile]);
-
-  const handleAlbumSelect = useCallback(async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    await ingestFile(files[0], "photos");
-  }, [ingestFile]);
-
   const handleCameraSwitch = useCallback(async () => {
     if (!cameraRef.current) return;
     const newMode = facingMode === "user" ? "environment" : "user";
@@ -111,16 +93,50 @@ export const useImageCaptureState = (
 
   const handleSummarize = useCallback(async () => {
     setError("");
-    
+
+    let summaryImages = images;
+    if (summaryImages.length === 0 && captureSource === "camera") {
+      if (!cameraRef.current) {
+        setError("Camera not ready.");
+        return;
+      }
+      try {
+        const capturedFile = await cameraRef.current.capture();
+        if (!capturedFile) {
+          setError("Unable to capture image.");
+          return;
+        }
+        const { file: normalizedFile, previewUrl } = await normalizeCapture(
+          capturedFile,
+          "camera",
+          {
+            maxFileSize: DEFAULTS.MAX_FILE_SIZE,
+            preferredName: `capture-${Date.now()}.jpeg`,
+          },
+        );
+        const nextImage = { url: previewUrl, file: normalizedFile };
+        summaryImages = [...images, nextImage];
+        setSummary("");
+        setImages(summaryImages);
+      } catch (err) {
+        setError("Unable to capture image.");
+        return;
+      }
+    }
+
+    if (summaryImages.length === 0) {
+      setError("No images available to summarize.");
+      return;
+    }
+
     const didSummarize = await handleSummary({
-      images,
+      images: summaryImages,
       setIsSaving,
       setSummary,
       setError,
     });
 
     if (didSummarize && images.length > 0) {
-      setShowGallery(true);
       playSuccessChime();
     }
   }, [images]);
@@ -132,7 +148,6 @@ export const useImageCaptureState = (
     facingMode,
     isSaving,
     isProcessingCapture,
-    showGallery,
     cameraError,
     captureSource,
     summary,
@@ -141,13 +156,10 @@ export const useImageCaptureState = (
 
   const actions: Actions = {
     deleteImage,
-    handleCapture,
-    handleAlbumSelect,
     handleCameraSwitch,
     handleSummarize,
     handleClose,
     setCaptureSource,
-    setShowGallery,
     setCameraError,
     setError,
   };

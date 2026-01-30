@@ -1,11 +1,10 @@
-import { Camera, CameraOff, Image as ImageIcon, Loader2, RefreshCcw, Save, X } from "lucide-react";
+import { CameraOff, Loader2, RefreshCcw, Save, X } from "lucide-react";
 import WebCamera from "@shivantra/react-web-camera";
 import { Button } from "@/ui/components";
 import type { CameraViewProps } from "./types";
 
 export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
   const isCamera = state.captureSource === "camera";
-  const latestImage = state.images[state.images.length - 1];
 
   return (
     <div className="flex h-full flex-col">
@@ -29,40 +28,33 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           />
         )}
 
-        {/* Album Picker View */}
-        {!isCamera && (
-          <div className="relative w-full flex-1 rounded-lg bg-black flex items-center justify-center">
-            {latestImage ? (
-              <img src={latestImage.url} className="max-h-full object-contain" alt="Preview" />
-            ) : (
-              <div className="text-white/60 text-center">
-                <ImageIcon className="w-10 h-10 mx-auto mb-2" />
-                <p>Pick a photo</p>
-              </div>
-            )}
-            <div className="absolute bottom-6 w-full px-8 flex flex-col gap-2">
-              <Button onClick={() => document.getElementById("photo-picker")?.click()} className="app-button">
-                {state.isProcessingCapture && <Loader2 className="animate-spin mr-2" />}
-                <span className="app-button-label">Choose Photo</span>
-              </Button>
+        {state.summary && (
+          <div className="absolute left-4 right-4 top-4 z-30">
+            <div className="rounded-lg border border-white/20 bg-black/70 p-3 text-white">
+              <p className="text-xs font-semibold text-blue-300 mb-2">
+                Summary View
+              </p>
+              <p className="text-sm whitespace-pre-wrap">{state.summary}</p>
+            </div>
+          </div>
+        )}
+
+        {!state.summary && (
+          <div className="absolute left-4 right-4 top-4 z-30">
+            <div className="rounded-lg border border-white/10 bg-black/40 p-3 text-white/70">
+              <p className="text-xs font-semibold text-blue-300 mb-2">
+                Summary View
+              </p>
+              <p className="text-sm">
+                No summary yet. Tap Summarize to generate one.
+              </p>
             </div>
           </div>
         )}
 
         {/* Floating Capture UI */}
         {isCamera && (
-          <div className="absolute bottom-8 w-full px-8 flex items-center justify-between z-20">
-             <button
-               onClick={() => actions.setShowGallery(true)}
-               className="app-button w-16 h-16 rounded-xl border-2 border-white/30 overflow-hidden"
-             >
-                {latestImage ? <img src={latestImage.url} className="w-full h-full object-cover" /> : <div className="w-full h-full" />}
-             </button>
-             
-             <Button onClick={actions.handleCapture} disabled={state.isSaving || state.cameraError} className="app-button w-20 h-20 rounded-full border-4 border-white/50">
-               <Camera className="w-8 h-8" />
-             </Button>
-
+          <div className="absolute bottom-8 w-full px-8 flex items-center justify-end z-20">
              <Button onClick={actions.handleCameraSwitch} className="app-button w-16 h-16 rounded-full">
                <RefreshCcw className={`transition-transform ${state.facingMode === 'user' ? 'rotate-180' : ''}`} />
              </Button>
@@ -75,7 +67,11 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
         <Button onClick={actions.handleClose} className="app-button flex-1">
           <X className="mr-2 h-4 w-4" /> <span className="app-button-label">Cancel</span>
         </Button>
-        <Button onClick={actions.handleSummarize} disabled={state.images.length === 0} className="app-button flex-1">
+        <Button
+          onClick={actions.handleSummarize}
+          disabled={state.isSaving || state.cameraError}
+          className="app-button flex-1"
+        >
           {state.isSaving ? (
             <Loader2 className="animate-spin mr-2" />
           ) : (
@@ -84,8 +80,6 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
           <span className="app-button-label">Summarize</span>
         </Button>
       </div>
-
-      <input id="photo-picker" type="file" accept="image/*" className="hidden" onChange={(e) => actions.handleAlbumSelect(e.target.files)} />
     </div>
   );
 }

@@ -4,7 +4,6 @@
 import { Dialog, DialogContent, DialogTitle } from "@/ui/components"; 
 import { useImageCaptureState } from "./useImageCaptureState";
 import { CameraView } from "./CameraView";
-import { GalleryView } from "./GalleryView";
 
 // Add this interface to define the props
 interface ImageCaptureDialogMobileProps {
@@ -23,7 +22,6 @@ export function ImageCaptureDialogMobile({
     initialSource,
   );
 
-  const { showGallery } = state;
   const { handleClose } = actions;
 
   return (
@@ -34,22 +32,11 @@ export function ImageCaptureDialogMobile({
       <DialogContent className="p-0 border-0 bg-black max-w-none w-full h-[100dvh] sm:max-w-sm sm:h-[680px] sm:rounded-[2rem] overflow-hidden [&>button:last-child]:hidden">
         <div className="relative w-full h-full flex flex-col bg-black">
           
-          {/* Main View: Camera */}
-          {!showGallery && (
-            <CameraView
-              state={state}
-              actions={actions}
-              cameraRef={cameraRef}
-            />
-          )}
-
-          {/* Gallery Overlay */}
-          {showGallery && (
-            <GalleryView 
-              state={state} 
-              actions={actions} 
-            />
-          )}
+          <CameraView
+            state={state}
+            actions={actions}
+            cameraRef={cameraRef}
+          />
           
         </div>
       </DialogContent>
