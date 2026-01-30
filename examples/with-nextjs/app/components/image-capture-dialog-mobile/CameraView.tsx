@@ -1,4 +1,4 @@
-import { Camera, CameraOff, Image as ImageIcon, Loader2, RefreshCcw, Save, X } from "lucide-react";
+import { Camera, CameraOff, Loader2, RefreshCcw, Save, X } from "lucide-react";
 import WebCamera from "@shivantra/react-web-camera";
 import { Button } from "@/ui/components";
 import type { CameraViewProps } from "./types";
@@ -27,26 +27,6 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
             captureMode="back"
             onError={() => actions.setCameraError(true)}
           />
-        )}
-
-        {/* Album Picker View */}
-        {!isCamera && (
-          <div className="relative w-full flex-1 rounded-lg bg-black flex items-center justify-center">
-            {latestImage ? (
-              <img src={latestImage.url} className="max-h-full object-contain" alt="Preview" />
-            ) : (
-              <div className="text-white/60 text-center">
-                <ImageIcon className="w-10 h-10 mx-auto mb-2" />
-                <p>Pick a photo</p>
-              </div>
-            )}
-            <div className="absolute bottom-6 w-full px-8 flex flex-col gap-2">
-              <Button onClick={() => document.getElementById("photo-picker")?.click()} className="app-button">
-                {state.isProcessingCapture && <Loader2 className="animate-spin mr-2" />}
-                <span className="app-button-label">Choose Photo</span>
-              </Button>
-            </div>
-          </div>
         )}
 
         {/* Floating Capture UI */}
@@ -85,7 +65,6 @@ export function CameraView({ state, actions, cameraRef }: CameraViewProps) {
         </Button>
       </div>
 
-      <input id="photo-picker" type="file" accept="image/*" className="hidden" onChange={(e) => actions.handleAlbumSelect(e.target.files)} />
     </div>
   );
 }
