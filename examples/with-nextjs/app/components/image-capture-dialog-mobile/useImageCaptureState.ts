@@ -26,7 +26,6 @@ export const useImageCaptureState = (
   const [facingMode, setFacingMode] = useState<FacingMode>("environment");
   const [isSaving, setIsSaving] = useState(false);
   const [isProcessingCapture, setIsProcessingCapture] = useState(false);
-  const [showGallery, setShowGallery] = useState(false);
   const [cameraError, setCameraError] = useState(false);
   const [captureSource, setCaptureSource] = useState<"camera" | "photos">(initialSource);
 
@@ -58,7 +57,6 @@ export const useImageCaptureState = (
     setImages([]);
     setSummary("");
     setError("");
-    setShowGallery(false);
     setCaptureSource(initialSource);
     setIsProcessingCapture(false);
     onOpenChange?.(false);
@@ -76,7 +74,6 @@ export const useImageCaptureState = (
 
         // Reset summary context for the new set of images
         setSummary("");
-        setShowGallery(false);
         setImages((prev) => [...prev, { url: previewUrl, file: normalizedFile }]);
       } catch (err) {
         setError(err instanceof CaptureError ? err.message : "Unable to process the image.");
@@ -120,7 +117,6 @@ export const useImageCaptureState = (
     });
 
     if (didSummarize && images.length > 0) {
-      setShowGallery(true);
       playSuccessChime();
     }
   }, [images]);
@@ -132,7 +128,6 @@ export const useImageCaptureState = (
     facingMode,
     isSaving,
     isProcessingCapture,
-    showGallery,
     cameraError,
     captureSource,
     summary,
@@ -147,7 +142,6 @@ export const useImageCaptureState = (
     handleSummarize,
     handleClose,
     setCaptureSource,
-    setShowGallery,
     setCameraError,
     setError,
   };

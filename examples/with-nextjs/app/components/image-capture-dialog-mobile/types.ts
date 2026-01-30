@@ -11,7 +11,6 @@ export interface State {
   facingMode: FacingMode;
   isSaving: boolean;
   isProcessingCapture: boolean;
-  showGallery: boolean;
   cameraError: boolean;
   captureSource: "camera" | "photos";
   summary: string;
@@ -26,7 +25,6 @@ export interface Actions {
   handleSummarize: () => Promise<void>;
   handleClose: () => void;
   setCaptureSource: (source: "camera" | "photos") => void;
-  setShowGallery: (show: boolean) => void;
   setCameraError: (error: boolean) => void;
   setError: (message: string) => void;
 }
