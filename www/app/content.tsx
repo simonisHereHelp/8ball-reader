@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import { Camera } from "lucide-react";
 import { Button } from "@/ui/components";
-import {
-  ImageCaptureDialogDesktop,
-  ImageCaptureDialogMobile,
-} from "@/app/components";
+import { ImageCaptureDialogMobile } from "@/app/components";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -93,11 +90,7 @@ function Content() {
         </div>
       </main>
 
-      {isMobile ? (
-        <ImageCaptureDialogMobile open={open} onOpenChange={handleClose} />
-      ) : (
-        <ImageCaptureDialogDesktop open={open} onOpenChange={handleClose} />
-      )}
+      <ImageCaptureDialogMobile open={open} onOpenChange={handleClose} />
     </div>
   );
 }
